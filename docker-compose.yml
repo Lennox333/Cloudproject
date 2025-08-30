@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mariadb
+    environment:
+      MARIA_ROOT_PASSWORD: root_password
+      MARIA_DATABASE: youtdb
+      MARIA_USER: admin
+      MARIA_PASSWORD: my_db_password
+      HOST: localhost
+      JWT_SECRET: super_secret_jwt_key
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  webclient:
+    build: ./webclient
+    ports:
+      - "1234:1234"   # Parcel default dev port
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./webclient:/app
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MARIA_ROOT_PASSWORD: root_password
+      MARIA_DATABASE: youtdb
+      MARIA_USER: admin
+      MARIA_PASSWORD: my_db_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:

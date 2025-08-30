@@ -1,0 +1,31 @@
+curl -X POST http://localhost:5000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "myuser", "password": "mypassword"}'
+
+
+curl -X POST http://localhost:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "myuser", "password": "mypassword"}'
+
+
+  curl -X POST -F "title=titlestset" -F "video=@/home/ln607/Apps/Stream-Recorder/speed up/eo58/[2025-07-05_19_24_16] eo58.ts" \
+  -H "Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjNDEwNWExZC1iOTk0LTRjNDEtYTNhNy1jMWFjMGEzNmNhN2YiLCJ1c2VybmFtZSI6Im15dXNlciIsImlhdCI6MTc1NjIwMDkwNSwiZXhwIjoxNzU2MjA0NTA1fQ.pbstQu_oI04vZEOsGMjVdbxDL35Hrxzk_COlMfSTvJs" \
+  http://localhost:5000/upload
+
+
+  docker build -t my-mariadb-image -f mariadock .                                                           
+  docker run -d --name mariadb-container -p 3306:3306  my-mariadb-image
+
+  # docker run mariadb-container -p 3306:3306 my-mariadb-image
+  docker start mariadb-container
+
+  # Database
+MARIA_ROOT_PASSWORD=your_root_password
+MARIA_DATABASE=youtdb
+MARIA_USER=admin
+MARIA_PASSWORD=your_db_password
+
+
+HOST=localhost
+# JWT
+JWT_SECRET=super_secret_jwt_key
