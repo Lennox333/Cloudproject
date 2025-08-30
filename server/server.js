@@ -40,9 +40,6 @@ app.use(express.urlencoded({ extended: true }));
 
 //##### ENDPOINTS ####
 
-app.get("/me", (req, res) => {
-  res.send("hello world");
-});
 
 app.post(
   "/upload",
