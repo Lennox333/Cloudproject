@@ -22,7 +22,11 @@ const PORT = process.env.PORT || 5000;
 const pool = await pool_setup();
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:8080", // frontend URL
+    origin: [
+      process.env.FRONTEND_ORIGIN,
+      "http://webclient:8080",
+      "http://localhost:8080",
+    ], // frontend URL
     credentials: true, // allow cookies/auth headers
   })
 );
@@ -172,7 +176,7 @@ app.post("/login", async (req, res) => {
       maxAge: 3 * 60 * 60 * 1000, // 3 hours
     });
 
-    res.json({ message: "Login successful", token });
+    res.json({ message: "Login successful" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });

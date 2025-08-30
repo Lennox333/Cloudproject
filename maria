@@ -13,23 +13,6 @@ curl -X POST http://localhost:5000/login \
   http://localhost:5000/upload
 
 
-  docker build -t my-mariadb-image -f mariadock .                                                           
-  docker run -d --name mariadb-container -p 3306:3306  my-mariadb-image
-
-  # docker run mariadb-container -p 3306:3306 my-mariadb-image
-  docker start mariadb-container
-
-  # Database
-MARIA_ROOT_PASSWORD=your_root_password
-MARIA_DATABASE=youtdb
-MARIA_USER=admin
-MARIA_PASSWORD=your_db_password
-
-
-HOST=localhost
-# JWT
-JWT_SECRET=super_secret_jwt_key
-
 
 git add .
 git commit -m "sdf"
