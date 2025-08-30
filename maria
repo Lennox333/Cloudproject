@@ -30,7 +30,28 @@ HOST=localhost
 # JWT
 JWT_SECRET=super_secret_jwt_key
 
+docker run -d \
+  --name mariadb \
+  -e MYSQL_ROOT_PASSWORD=root_password \
+  -e MYSQL_DATABASE=youtdb \
+  -e MYSQL_USER=admin \
+  -e MYSQL_PASSWORD=my_db_password \
+  -p 3306:3306 \
+  mariadb:latest
 
+docker run -d \
+  --name server \
+  -p 5000:5000 \
+  --link mariadb:db \
+  -e MARIA_HOST=mariadb \
+  -e MARIA_DATABASE=youtdb \
+  -e MARIA_USER=admin \
+  -e MARIA_PASSWORD=my_db_password \
+  -e JWT_SECRET=super_secret_jwt_key \
+  server:latest
+
+
+docker run -d --name webclient -p 8080:8080 webclient:latest
 
 docker build -t server ./server
 docker build -t webclient ./webclient

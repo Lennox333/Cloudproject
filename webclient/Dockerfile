@@ -7,5 +7,6 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 1234
-CMD ["npm", "run", "dev"]
+EXPOSE 8080
+
+CMD ["npm", "run", "dev", "--", "--port", "8080", "--host", "0.0.0.0"]
