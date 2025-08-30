@@ -20,7 +20,7 @@ git push
 
 docker-compose down
 cd
-rm -rf Cloudproject
+sudo rm -rf Cloudproject
 git clone https://github.com/Lennox333/Cloudproject.git
 cd Cloudproject
 docker stop $(docker ps -aq)

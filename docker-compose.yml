@@ -31,8 +31,8 @@ services:
     networks:
       - app-network
     volumes:
-      - ./server/uploads:/app/uploads 
-  
+      - ./server/uploads:/app/server/uploads  
+      
     restart: unless-stopped
 
   webclient:
