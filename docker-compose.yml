@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   webclient:
-    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:lastest
+    image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:latest
     ports:
       - "8080:8080"
     command: npm run dev -- --host 0.0.0.0 --port 8080
