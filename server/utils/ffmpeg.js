@@ -36,7 +36,7 @@ async function transcodeVideo(videoPath, videoId) {
     ({ name, scale }) =>
       new Promise((resolve, reject) => {
         const outputPath = path.join(uploadsDir, name);
-        const cmd = `ffmpeg -i "${videoPath}" -vf scale=${scale} -c:v libx264 -crf 28 -preset medium -c:a aac -strict -2 "${outputPath}"`;
+        const cmd = `ffmpeg -i "${videoPath}" -vf scale=${scale} -c:v libx264 -crf 23 -preset medium -c:a aac -strict -2 "${outputPath}"`;
 
         exec(cmd, (err) => {
           if (err) {

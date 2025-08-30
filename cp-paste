@@ -22,6 +22,10 @@ docker-compose up -d
 docker-compose -f docker-compose-from-ecr.yml up -d
 
 
+aws ecr get-login-password --region ap-southeast-2 \
+| docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+
+
 docker build -t server:latest ./server
 docker build -t webclient:latest ./webclient
 docker tag server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
