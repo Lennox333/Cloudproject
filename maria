@@ -25,6 +25,7 @@ docker rmi -f $(docker images -q)
 docker volume rm $(docker volume ls -q)
 cd
 sudo rm -rf Cloudproject
+
 git clone https://github.com/Lennox333/Cloudproject.git
 cd Cloudproject
 docker-compose up -d
