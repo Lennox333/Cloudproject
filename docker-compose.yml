@@ -41,8 +41,7 @@ services:
       - server
     networks:
       - app-network
-    volumes:
-      - ./config.json:/app/config.json:ro
+
 
     restart: unless-stopped
 
