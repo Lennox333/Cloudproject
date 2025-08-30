@@ -29,6 +29,10 @@ docker rmi -f $(docker images -q)
 docker volume rm $(docker volume ls -q)
 docker-compose up -d
 
+
+docker-compose -f docker-compose-from-ecr.yml up -d
+
+
 docker build -t server:latest ./server
 docker build -t webclient:latest ./webclient
 docker tag server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
