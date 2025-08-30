@@ -31,6 +31,7 @@ HOST=localhost
 JWT_SECRET=super_secret_jwt_key
 
 
+docker-compose down
 cd
 rm -rf Cloudproject
 git clone https://github.com/Lennox333/Cloudproject.git
@@ -38,6 +39,7 @@ cd Cloudproject
 docker stop $(docker ps -aq)
 docker rm $(docker ps -aq)
 docker rmi -f $(docker images -q)
+docker volume rm $(docker volume ls -q)
 docker-compose up -d
 
 
@@ -59,6 +61,11 @@ docker run -d \
   
 docker build -t server ./server
 docker build -t webclient ./webclient
+docker tag server 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
+docker tag client 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
+
 
 
 docker run -d \
