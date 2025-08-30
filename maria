@@ -31,6 +31,17 @@ HOST=localhost
 JWT_SECRET=super_secret_jwt_key
 
 
+cd
+rm -rf Cloudproject
+git clone https://github.com/Lennox333/Cloudproject.git
+cd Cloudproject
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+docker rmi -f $(docker images -q)
+docker-compose up -d
+
+
+
 docker stop $(docker ps -aq)
 docker rm $(docker ps -aq)
 docker rmi -f $(docker images -q)
@@ -44,6 +55,8 @@ docker run -d \
   -e MYSQL_PASSWORD=my_db_password \
   -p 3306:3306 \
   mariadb:latest
+
+  
 docker build -t server ./server
 docker build -t webclient ./webclient
 

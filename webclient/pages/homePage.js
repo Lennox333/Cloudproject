@@ -25,7 +25,7 @@ export const renderVideos = async () => {
       (v) => `
         <li class="video-item">
           <img class="video-thumb" 
-               src=http://${SERVER}:5000/thumbnails/${v.thumbnail}" 
+               src="http://${SERVER}:5000/thumbnails/${v.thumbnail}" 
                alt="${v.video_title}"
                data-id="${v.video_id}" />
           <p>${v.video_title}</p>

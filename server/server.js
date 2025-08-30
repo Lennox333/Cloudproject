@@ -27,6 +27,8 @@ app.use(
   })
 );
 
+console.log("CORS allowed origin:", process.env.FRONTEND_ORIGIN);
+
 // Serve thumbnails
 app.use("/thumbnails", express.static(`${dirname}/uploads/thumbnails`));
 
