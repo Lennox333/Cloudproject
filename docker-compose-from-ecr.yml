@@ -27,9 +27,11 @@ services:
       MARIA_USER: admin
       MARIA_PASSWORD: my_db_password
       JWT_SECRET: super_secret_jwt_key
-      FRONTEND_ORIGIN: http://ec2-3-27-212-66.ap-southeast-2.compute.amazonaws.com:8080
+      FRONTEND_ORIGIN: http://n11772891.cab432.com:8080
     networks:
       - app-network
+    volumes:
+      - ./uploads:/app/uploads   
     restart: unless-stopped
 
   webclient:
