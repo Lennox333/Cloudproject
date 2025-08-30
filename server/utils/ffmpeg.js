@@ -26,8 +26,8 @@ async function transcodeVideo(videoPath, videoId) {
   await fs.mkdir(uploadsDir, { recursive: true });
 
   const resolutions = [
-    { name: `${videoId}_360p.mp4`, scale: "640:360" },
-    { name: `${videoId}_480p.mp4`, scale: "854:480" },
+    // { name: `${videoId}_360p.mp4`, scale: "640:360" },
+    // { name: `${videoId}_480p.mp4`, scale: "854:480" },
     { name: `${videoId}_720p.mp4`, scale: "1280:720" },
   ];
 
@@ -36,7 +36,7 @@ async function transcodeVideo(videoPath, videoId) {
     ({ name, scale }) =>
       new Promise((resolve, reject) => {
         const outputPath = path.join(uploadsDir, name);
-        const cmd = `ffmpeg -i "${videoPath}" -vf scale=${scale} -c:v libx264 -crf 28 -preset veryfast -c:a aac -strict -2 "${outputPath}"`;
+        const cmd = `ffmpeg -i "${videoPath}" -vf scale=${scale} -c:v libx264 -crf 28 -preset medium -c:a aac -strict -2 "${outputPath}"`;
 
         exec(cmd, (err) => {
           if (err) {
