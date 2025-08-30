@@ -29,3 +29,12 @@ MARIA_PASSWORD=your_db_password
 HOST=localhost
 # JWT
 JWT_SECRET=super_secret_jwt_key
+
+
+
+docker build -t server ./server
+docker build -t webclient ./webclient
+
+
+docker tag server:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/server:latest
+docker tag webclient:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/webclient:latest
