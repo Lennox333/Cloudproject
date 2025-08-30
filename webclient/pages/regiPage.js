@@ -16,7 +16,7 @@ export const bindRegisterForm = () => {
     };
 
     try {
-      const res = await fetch(`http://${SERVER}:5000/register`, {
+      const res = await fetch(`${SERVER}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

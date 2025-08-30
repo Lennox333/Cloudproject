@@ -1,5 +1,5 @@
 import { renderContent } from "..";
-import { SERVER } from "../utils/globals";
+import { SERVER, serverReady } from "../utils/globals";
 import { updateAuthUI } from "../utils/updateAuthUI";
 
 
@@ -19,7 +19,8 @@ export const bindLoginForm = () => {
     };
 
     try {
-      const res = await fetch(`http://${SERVER}:5000/login`, {
+      await serverReady
+      const res = await fetch(`${SERVER}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

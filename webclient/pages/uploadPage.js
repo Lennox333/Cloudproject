@@ -1,5 +1,5 @@
 import { checkLogin } from "../utils/checkLogin";
-import { SERVER } from "../utils/globals";
+import { SERVER, serverReady } from "../utils/globals";
 
 
 export const  bindUploadForm =  async () => {
@@ -31,7 +31,8 @@ export const  bindUploadForm =  async () => {
     formData.append("video", videoFile);
 
     try {
-      const res = await fetch(`http://${SERVER}:5000/upload`, {
+      await serverReady;
+      const res = await fetch(`${SERVER}/upload`, {
         method: "POST",
         body: formData,
         credentials: "include", // sends cookies if using cookie auth

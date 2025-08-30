@@ -1,4 +1,4 @@
-import { SERVER } from "../utils/globals";
+import { SERVER, serverReady } from "../utils/globals";
 
 export const pageSize = 5;
 let currentPage = 1;
@@ -7,7 +7,7 @@ let currentVideoId = null; // store currently playing video
 export const fetchVideos = async (page = 1, limit = pageSize) => {
   try {
     const res = await fetch(
-      `http://${SERVER}:5000/videos?page=${page}&limit=${limit}`
+      `${SERVER}/videos?page=${page}&limit=${limit}`
     );
     const data = await res.json();
     return data; // { videos: [...], total: n }
@@ -18,6 +18,7 @@ export const fetchVideos = async (page = 1, limit = pageSize) => {
 };
 
 export const renderVideos = async () => {
+  await serverReady
   const { videos, total } = await fetchVideos(currentPage);
 
   const videoList = videos
@@ -25,7 +26,7 @@ export const renderVideos = async () => {
       (v) => `
         <li class="video-item">
           <img class="video-thumb" 
-               src="http://${SERVER}:5000/thumbnails/${v.thumbnail}" 
+               src="${SERVER}/thumbnails/${v.thumbnail}" 
                alt="${v.video_title}"
                data-id="${v.video_id}" />
           <p>${v.video_title}</p>
@@ -76,7 +77,7 @@ export const renderVideos = async () => {
 const playVideo = (videoId, res = "720") => {
   const player = document.querySelector("#video-player");
   const source = document.querySelector("#video-source");
-  source.src = `http://${SERVER}:5000/video/${videoId}?res=${res}`;
+  source.src = `${SERVER}/video/${videoId}?res=${res}`;
   player.load();
   player.play();
 };

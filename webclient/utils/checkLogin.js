@@ -2,7 +2,7 @@ import { SERVER } from "./globals";
 
 export const checkLogin = async () => {
   try {
-    const res = await fetch(`http://${SERVER}:5000/profile`, {
+    const res = await fetch(`${SERVER}/profile`, {
       credentials: "include", // send cookies
     });
 

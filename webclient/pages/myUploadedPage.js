@@ -1,6 +1,6 @@
 import { MyVideoItem } from "../components/MyVideoItem";
 import { checkLogin } from "../utils/checkLogin.js";
-import { SERVER } from "../utils/globals.js";
+import { SERVER, serverReady } from "../utils/globals.js";
 
 export const renderMyUploads = async () => {
   const container = document.querySelector("#my-uploads");
@@ -14,7 +14,8 @@ export const renderMyUploads = async () => {
   }
 
   try {
-    const res = await fetch(`http://${SERVER}:5000/videos/${userId}`, {
+    await serverReady;
+    const res = await fetch(`${SERVER}/videos/${userId}`, {
       credentials: "include",
     });
     if (!res.ok) throw new Error("Failed to fetch videos");
@@ -37,7 +38,7 @@ export const renderMyUploads = async () => {
         if (!confirm("Are you sure you want to delete this video?")) return;
 
         try {
-          const delRes = await fetch(`http://${SERVER}:5000/video/${videoId}`, {
+          const delRes = await fetch(`${SERVER}/video/${videoId}`, {
             method: "DELETE",
             credentials: "include",
           });

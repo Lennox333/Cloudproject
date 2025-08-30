@@ -31,6 +31,10 @@ HOST=localhost
 JWT_SECRET=super_secret_jwt_key
 
 
+git add .
+git commit -m "sdf"
+git push
+
 docker-compose down
 cd
 rm -rf Cloudproject
