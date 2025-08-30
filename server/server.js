@@ -13,9 +13,7 @@ import { getVideoPath, fileExists, streamVideo } from "./utils/streamfile.js";
 import { getDirname } from "./utils/getDirname.js";
 import cors from "cors";
 import { fetchVideos } from "./utils/fetchVideos.js";
-import path from "path";
 import { deleteVideoFiles } from "./utils/deleteVideo.js";
-
 
 const app = express();
 
@@ -24,11 +22,10 @@ const PORT = process.env.PORT || 5000;
 const pool = await pool_setup();
 app.use(
   cors({
-    origin: "http://localhost:1234", // frontend origin
+    origin: process.env.FRONTEND_ORIGIN || "http://localhost:8080", // frontend URL
     credentials: true, // allow cookies/auth headers
   })
 );
-
 
 // Serve thumbnails
 app.use("/thumbnails", express.static(`${dirname}/uploads/thumbnails`));
@@ -36,10 +33,6 @@ app.use("/thumbnails", express.static(`${dirname}/uploads/thumbnails`));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
-
-
 
 //##### ENDPOINTS ####
 
@@ -56,7 +49,7 @@ app.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const { title, description } = req.body; 
+    const { title, description } = req.body;
     const videoId = randomUUID();
 
     if (!title || !title.trim()) {
@@ -205,7 +198,13 @@ app.get("/videos", async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    const data = await fetchVideos({ conn, upld_before, upld_after, page, limit });
+    const data = await fetchVideos({
+      conn,
+      upld_before,
+      upld_after,
+      page,
+      limit,
+    });
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -215,12 +214,11 @@ app.get("/videos", async (req, res) => {
   }
 });
 
-
 app.get("/videos/:userId", authenticateToken, async (req, res) => {
   const { userId } = req.params;
   const { page, limit, upld_before, upld_after } = req.query;
 
-  // Only allow self 
+  // Only allow self
   if (req.user.userId !== userId) {
     return res.status(403).json({ error: "Forbidden" });
   }
@@ -228,7 +226,14 @@ app.get("/videos/:userId", authenticateToken, async (req, res) => {
   let conn;
   try {
     conn = await pool.getConnection();
-    const data = await fetchVideos({ conn, userId, upld_before, upld_after, page, limit });
+    const data = await fetchVideos({
+      conn,
+      userId,
+      upld_before,
+      upld_after,
+      page,
+      limit,
+    });
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -237,7 +242,6 @@ app.get("/videos/:userId", authenticateToken, async (req, res) => {
     if (conn) conn.release();
   }
 });
-
 
 app.get("/video/:id", (req, res) => {
   const { id } = req.params;
@@ -270,7 +274,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: "Video not found" });
     }
-    
+
     const video = rows[0];
 
     if (req.user.userId !== video.user_id) {
@@ -283,8 +287,8 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
     // Delete files
     await deleteVideoFiles(videoId);
 
-    console.log("Deleted ", videoId)
-    res.json({ success: true , message: `Deleted ${videoId}`});
+    console.log("Deleted ", videoId);
+    res.json({ success: true, message: `Deleted ${videoId}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database or file deletion error" });
@@ -292,8 +296,6 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
     if (conn) conn.release();
   }
 });
-
-
 
 //##### ENDPOINTS ####
 

@@ -1,3 +1,3 @@
-const SERVER = 'localhost'
+const SERVER = 'server'
 
 export { SERVER };

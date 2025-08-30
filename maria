@@ -48,6 +48,7 @@ docker run -d \
   -e MARIA_USER=admin \
   -e MARIA_PASSWORD=my_db_password \
   -e JWT_SECRET=super_secret_jwt_key \
+  -e FRONTEND_ORIGIN=http://webclient:8080 \
   server:latest
 
 
@@ -64,3 +65,9 @@ docker tag webclient:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/webc
 serve -d dist -b 0.0.0.0 -p 1234
 serve -d dist -b 0.0.0.0 -p 8080
 npx serve dist -l 8080
+
+
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+
+docker rmi -f $(docker images -q)
