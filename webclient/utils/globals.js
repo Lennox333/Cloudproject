@@ -1,3 +1,3 @@
-const SERVER = 'server'
+const SERVER = 'ec2-3-27-212-66.ap-southeast-2.compute.amazonaws.com'
 
 export { SERVER };

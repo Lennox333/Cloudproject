@@ -5,7 +5,7 @@ import mariadb from "mariadb";
 
 export async function pool_setup() {
   const pool = mariadb.createPool({
-    host: process.env.HOST,
+    host: process.env.MARIA_HOST,
     user: process.env.MARIA_USER,
     password: process.env.MARIA_PASSWORD,
     database: process.env.MARIA_DATABASE,
