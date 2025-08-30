@@ -27,7 +27,7 @@ services:
       MARIA_USER: admin
       MARIA_PASSWORD: my_db_password
       JWT_SECRET: super_secret_jwt_key
-      FRONTEND_ORIGIN: http://ec2-54-153-145-88.ap-southeast-2.compute.amazonaws.com:8080
+      FRONTEND_ORIGIN: http://ec2-3-107-19-197.ap-southeast-2.compute.amazonaws.com:8080
     networks:
       - app-network
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
     networks:
       - app-network
     volumes:
-      - ./config.json:/app/public/config.json:ro
+      - ./config.json:/app/config.json:ro
 
     restart: unless-stopped
 
