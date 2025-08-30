@@ -1,4 +1,4 @@
-import { SERVER, serverReady } from "../utils/globals";
+import { SERVER } from "../utils/globals";
 
 export const pageSize = 5;
 let currentPage = 1;
@@ -18,7 +18,6 @@ export const fetchVideos = async (page = 1, limit = pageSize) => {
 };
 
 export const renderVideos = async () => {
-  await serverReady
   const { videos, total } = await fetchVideos(currentPage);
 
   const videoList = videos

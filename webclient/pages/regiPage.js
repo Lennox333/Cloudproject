@@ -1,4 +1,4 @@
-import { SERVER, serverReady } from "../utils/globals";
+import { SERVER } from "../utils/globals";
 
 export const bindRegisterForm = () => {
   const form = document.querySelector("#register-form");
@@ -16,7 +16,6 @@ export const bindRegisterForm = () => {
     };
 
     try {
-      await serverReady;
       const res = await fetch(`${SERVER}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
