@@ -42,6 +42,16 @@ docker rmi -f $(docker images -q)
 docker volume rm $(docker volume ls -q)
 docker-compose up -d
 
+docker build -t server:latest ./server
+docker build -t webclient:latest ./webclient
+docker tag server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
+docker tag webclient:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
+
+
+docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
+docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
 
 
 docker stop $(docker ps -aq)
@@ -59,13 +69,6 @@ docker run -d \
   mariadb:latest
 
   
-docker build -t server ./server
-docker build -t webclient ./webclient
-docker tag server 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
-docker tag client 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
-docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
-docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
-
 
 
 docker run -d \
