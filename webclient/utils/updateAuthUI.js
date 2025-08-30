@@ -1,6 +1,6 @@
 import { renderContent } from "..";
 import { checkLogin } from "./checkLogin";
-import { SERVER, serverReady } from "./globals";
+import { SERVER } from "./globals";
 
 export const updateAuthUI = async () => {
   const loginLink = document.querySelector('a[href="/login"]');
@@ -13,7 +13,6 @@ export const updateAuthUI = async () => {
     loginLink.textContent = "Logout";
     loginLink.onclick = async (e) => {
       e.preventDefault();
-      await serverReady
       await fetch(`${SERVER}/logout`, {
         method: "POST",
         credentials: "include",

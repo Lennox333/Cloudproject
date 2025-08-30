@@ -1,5 +1,5 @@
 import { checkLogin } from "../utils/checkLogin";
-import { SERVER, serverReady } from "../utils/globals";
+import { SERVER } from "../utils/globals";
 
 
 export const  bindUploadForm =  async () => {
@@ -31,7 +31,6 @@ export const  bindUploadForm =  async () => {
     formData.append("video", videoFile);
 
     try {
-      await serverReady;
       const res = await fetch(`${SERVER}/upload`, {
         method: "POST",
         body: formData,
