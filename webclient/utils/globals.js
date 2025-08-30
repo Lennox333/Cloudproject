@@ -1,7 +1,7 @@
 let SERVER = "http://localhost:5000"; // fallback
 
 // Fetch the actual server URL from config.json
-let serverReady = fetch("../config.json")
+let serverReady = fetch("/config.json")
   .then(res => res.json())
   .then(cfg => {
     SERVER = cfg.SERVER;
