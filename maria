@@ -38,3 +38,8 @@ docker build -t webclient ./webclient
 
 docker tag server:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/server:latest
 docker tag webclient:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/webclient:latest
+
+
+serve -d dist -b 0.0.0.0 -p 1234
+serve -d dist -b 0.0.0.0 -p 8080
+npx serve dist -l 8080

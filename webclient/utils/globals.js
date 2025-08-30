@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
+const SERVER = 'localhost'
 
-const SERVER = process.env.SERVER
-
-export {SERVER}
+export { SERVER };
