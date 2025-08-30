@@ -1,17 +1,3 @@
-curl -X POST http://localhost:5000/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "myuser", "password": "mypassword"}'
-
-
-curl -X POST http://localhost:5000/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "myuser", "password": "mypassword"}'
-
-
-  curl -X POST -F "title=titlestset" -F "video=@/home/ln607/Apps/Stream-Recorder/speed up/eo58/[2025-07-05_19_24_16] eo58.ts" \
-  -H "Cookie: token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjNDEwNWExZC1iOTk0LTRjNDEtYTNhNy1jMWFjMGEzNmNhN2YiLCJ1c2VybmFtZSI6Im15dXNlciIsImlhdCI6MTc1NjIwMDkwNSwiZXhwIjoxNzU2MjA0NTA1fQ.pbstQu_oI04vZEOsGMjVdbxDL35Hrxzk_COlMfSTvJs" \
-  http://localhost:5000/upload
-
 
 
 git add .
@@ -78,14 +64,5 @@ docker run -d \
 
 docker run -d --name webclient -p 8080:8080 webclient:latest
 
-
-
-docker tag server:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/server:latest
-docker tag webclient:latest <aws_account_id>.dkr.ecr.<region>.amazonaws.com/webclient:latest
-
-
-serve -d dist -b 0.0.0.0 -p 1234
-serve -d dist -b 0.0.0.0 -p 8080
-npx serve dist -l 8080
 
 
