@@ -1,4 +1,4 @@
-import { SERVER } from "../utils/globals";
+import { SERVER, serverReady } from "../utils/globals";
 
 export const bindRegisterForm = () => {
   const form = document.querySelector("#register-form");
@@ -8,14 +8,15 @@ export const bindRegisterForm = () => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
+
     const data = {
       username: form.username.value.trim(),
-    //   email: form.email.value.trim(),
+      //   email: form.email.value.trim(),
       password: form.password.value,
     };
 
     try {
+      await serverReady;
       const res = await fetch(`${SERVER}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,4 +39,3 @@ export const bindRegisterForm = () => {
     }
   });
 };
-
