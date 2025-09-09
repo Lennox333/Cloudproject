@@ -22,16 +22,19 @@ docker-compose up -d
 docker-compose -f docker-compose-from-ecr.yml up -d
 
 
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
+
 aws ecr get-login-password --region ap-southeast-2 \
 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 
 
-docker build -t server:latest ./server
-docker build -t webclient:latest ./webclient
-docker tag server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
-docker tag webclient:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
-docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
-docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client
+docker build -t n11772891/resapi-server ./server
+docker build -t n11772891/resapi-client ./webclient
+
+docker tag n11772891/resapi-client:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:latest
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:latest
+docker tag n11772891/resapi-server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
 
 
 docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server
@@ -72,3 +75,11 @@ docker run -d --name webclient -p 8080:8080 webclient:latest
 
 
 
+cd /home/ln607/Documents/Cloudproject
+
+zip -r Cloudproject.zip \
+    webclient \
+    server \
+    /home/ln607/Documents/Cloudproject/ A1_response_to_criteria.md \
+    docker-compose-from-ecr.yml \
+    init.sql

@@ -2,6 +2,8 @@ import { renderContent } from "..";
 import { checkLogin } from "./checkLogin";
 import { SERVER } from "./globals";
 
+
+// change login button to logout if logged in
 export const updateAuthUI = async () => {
   const loginLink = document.querySelector('a[href="/login"]');
   if (!loginLink) return;
@@ -9,9 +11,9 @@ export const updateAuthUI = async () => {
   const loggedIn = await checkLogin();
 
   if (loggedIn) {
-    // Logged in
-    loginLink.textContent = "Logout";
-    loginLink.onclick = async (e) => {
+    // then log out shown
+    loginLink.textContent = "Logout"; // change button text
+    loginLink.onclick = async (e) => { // listener for the button
       e.preventDefault();
       await fetch(`${SERVER}/logout`, {
         method: "POST",

@@ -22,12 +22,10 @@ const PORT = process.env.PORT || 5000;
 const pool = await pool_setup();
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_ORIGIN,
-    ], // frontend URL
+    origin: [ "http://localhost:1234"], // frontend URL
     credentials: true, // allow cookies/auth headers
   })
-);
+);1
 
 console.log("CORS allowed origin:", process.env.FRONTEND_ORIGIN);
 
@@ -39,56 +37,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //##### ENDPOINTS ####
-
-
-app.post(
-  "/upload",
-  authenticateToken,
-  upload.single("video"),
-  async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    const { title, description } = req.body;
-    const videoId = randomUUID();
-
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: "Video title is required" });
-    }
-
-    let conn;
-    try {
-      // Generate thumbnail
-      const thumbnailName = await generateThumbnail(req.file.path, videoId);
-
-      // Save video info to DB using user-provided title
-      conn = await pool.getConnection();
-      await conn.query(
-        "INSERT INTO user_videos (user_id, video_id, video_title, description, thumbnail) VALUES (?, ?, ?, ?, ?)",
-        [
-          req.user.userId,
-          videoId,
-          title.trim(), // use user input
-          description || null,
-          thumbnailName,
-        ]
-      );
-
-      await transcodeVideo(req.file.path, videoId);
-
-      res.json({
-        message: "Upload successful, transcoding started",
-        videoId,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Database error" });
-    } finally {
-      if (conn) conn.release();
-    }
-  }
-);
 
 //## USER
 
@@ -123,7 +71,7 @@ app.post("/register", async (req, res) => {
       [userId, username, passwordHash]
     );
 
-    res.json({ message: "User registered successfully", userId });
+    res.status(200).json({ message: "User registered successfully", userId });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
@@ -171,7 +119,7 @@ app.post("/login", async (req, res) => {
       maxAge: 3 * 60 * 60 * 1000, // 3 hours
     });
 
-    res.json({ message: "Login successful" });
+    res.status(200)({ message: "Login successful" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
@@ -182,17 +130,67 @@ app.post("/login", async (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("token"); // clear the login cookie
-  res.json({ message: "Logged out successfully" });
+  res.status(200).json({ message: "Logged out successfully" });
 });
 
 app.get("/profile", authenticateToken, (req, res) => {
-  res.json({
+  res.status(200)({
     message: `Hello ${req.user.username}`,
     userId: req.user.userId,
   });
 });
 
 // ## VIDEOS
+
+app.post(
+  "/upload",
+  authenticateToken,
+  upload.single("video"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const { title, description } = req.body;
+    const videoId = randomUUID();
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Video title is required" });
+    }
+
+    let conn;
+    try {
+      // Generate thumbnail
+      const thumbnailName = await generateThumbnail(req.file.path, videoId);
+
+      // Save video info to DB using user-provided title
+      conn = await pool.getConnection();
+      await conn.query(
+        "INSERT INTO user_videos (user_id, video_id, video_title, description, thumbnail) VALUES (?, ?, ?, ?, ?)",
+        [
+          req.user.userId,
+          videoId,
+          title.trim(), // use user input
+          description || null,
+          thumbnailName,
+        ]
+      );
+
+      await transcodeVideo(req.file.path, videoId);
+
+      res.status(200).json({
+        message: "Upload successful",
+        videoId,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Database error" });
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+);
+
 app.get("/videos", async (req, res) => {
   const { upld_before, upld_after, page, limit } = req.query;
 
@@ -206,7 +204,7 @@ app.get("/videos", async (req, res) => {
       page,
       limit,
     });
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
@@ -235,7 +233,7 @@ app.get("/videos/:userId", authenticateToken, async (req, res) => {
       page,
       limit,
     });
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
@@ -289,7 +287,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
     await deleteVideoFiles(videoId);
 
     console.log("Deleted ", videoId);
-    res.json({ success: true, message: `Deleted ${videoId}` });
+    res.status(200).json({ success: true, message: `Deleted ${videoId}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database or file deletion error" });
