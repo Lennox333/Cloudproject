@@ -6,18 +6,16 @@ import {
   authenticateToken,
   generateToken,
 } from "./middleware/authentication.js";
-import { generateThumbnail, transcodeVideo } from "./utils/ffmpeg.js";
-import upload from "./utils/storage.js";
+import { transcodeAndUpload } from "./utils/ffmpeg.js";
 import { pool_setup } from "./utils/database.js";
-import { getVideoPath, fileExists, streamVideo } from "./utils/streamfile.js";
-import { getDirname } from "./utils/getDirname.js";
 import cors from "cors";
 import { fetchVideos } from "./utils/fetchVideos.js";
 import { deleteVideoFiles } from "./utils/deleteVideo.js";
+import { getPresignedUrl } from "./utils/s3.js";
 
 const app = express();
-
-const dirname = getDirname(import.meta.url);
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
 const PORT = process.env.PORT || 5000;
 const pool = await pool_setup();
 app.use(
@@ -25,12 +23,8 @@ app.use(
     origin: [ "http://localhost:1234"], // frontend URL
     credentials: true, // allow cookies/auth headers
   })
-);1
+);
 
-console.log("CORS allowed origin:", process.env.FRONTEND_ORIGIN);
-
-// Serve thumbnails
-app.use("/thumbnails", express.static(`${dirname}/uploads/thumbnails`));
 
 app.use(cookieParser());
 app.use(express.json());
@@ -140,56 +134,150 @@ app.get("/profile", authenticateToken, (req, res) => {
   });
 });
 
+
 // ## VIDEOS
+app.get("/thumbnails/:videoId", async (req, res) => {
+  const { videoId } = req.params;
 
-app.post(
-  "/upload",
-  authenticateToken,
-  upload.single("video"),
-  async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(
+      "SELECT thumbnail FROM user_videos WHERE video_id = ?",
+      [videoId]
+    );
 
-    const { title, description } = req.body;
-    const videoId = randomUUID();
+    if (rows.length === 0) return res.status(404).json({ error: "Thumbnail not found" });
 
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: "Video title is required" });
-    }
+    const s3Key = `thumbnails/${rows[0].thumbnail}`;
+    
+    // For public S3 bucket, just construct URL
+    const url = `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${s3Key}`;
+    
+    res.status(200).json({ thumbnailUrl: url });
 
-    let conn;
-    try {
-      // Generate thumbnail
-      const thumbnailName = await generateThumbnail(req.file.path, videoId);
-
-      // Save video info to DB using user-provided title
-      conn = await pool.getConnection();
-      await conn.query(
-        "INSERT INTO user_videos (user_id, video_id, video_title, description, thumbnail) VALUES (?, ?, ?, ?, ?)",
-        [
-          req.user.userId,
-          videoId,
-          title.trim(), // use user input
-          description || null,
-          thumbnailName,
-        ]
-      );
-
-      await transcodeVideo(req.file.path, videoId);
-
-      res.status(200).json({
-        message: "Upload successful",
-        videoId,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Database error" });
-    } finally {
-      if (conn) conn.release();
-    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database/S3 error" });
+  } finally {
+    if (conn) conn.release();
   }
-);
+});
+
+
+
+app.post("/get-upload-url", authenticateToken, async (req, res) => {
+  const { filename, title } = req.body;
+
+  if (!filename || !title) return res.status(400).json({ error: "Filename and title required" });
+
+  const videoId = randomUUID();
+  const s3Key = `videos/${videoId}-${filename}`;
+
+  try {
+    const uploadUrl = await getPresignedUrl(s3Key, 3600, "putObject");
+    res.status(200).json({ uploadUrl, videoId, s3Key });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate upload URL" });
+  }
+
+//   // Frontend example
+// await fetch(uploadUrl, {
+//   method: "PUT",
+//   body: file, 
+//   headers: { "Content-Type": file.type }
+// });
+
+});
+
+
+
+app.post("/upload", authenticateToken, async (req, res) => {
+  const { videoId, s3Key, title, description } = req.body;
+  if (!videoId || !s3Key || !title)
+    return res.status(400).json({ error: "Missing data" });
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // Save metadata with initial status
+    await conn.query(
+      "INSERT INTO user_videos (user_id, video_id, video_title, description, s3_key, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [req.user.userId, videoId, title, description || null, s3Key, "processing"]
+    );
+
+    // Respond immediately
+    res.status(200).json({ message: "Upload confirmed, transcoding started", videoId });
+
+    // Start background transcoding
+    transcodeAndUpload(videoId, s3Key);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.get("/video/:id/stream", async (req, res) => {
+  const { id } = req.params;
+  const { res: resolution = "360" } = req.query; // default to 360p
+  const allowedRes = ["360", "480", "720"];
+
+  if (!allowedRes.includes(resolution)) {
+    return res.status(400).json({ error: "Invalid resolution" });
+  }
+
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // Fetch S3 key for the video
+    const rows = await conn.query(
+      "SELECT s3_key FROM user_videos WHERE video_id = ?",
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Video not found" });
+
+    const originalKey = rows[0].s3_key;
+    const extension = originalKey.split(".").pop();
+    const resolutionKey = `videos/${id}_${resolution}p.${extension}`;
+
+    // Construct public URL
+    const videoUrl = `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${resolutionKey}`;
+
+    res.status(200).json({ videoUrl });
+  } catch (err) {
+    console.error("Streaming error:", err);
+    res.status(500).json({ error: "Database/S3 error" });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+
+
+app.get("/videos/:id/status", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(
+      "SELECT status FROM user_videos WHERE video_id = ?",
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "Video not found" });
+    res.status(200).json({ videoId: id, status: rows[0].status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error" });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 
 app.get("/videos", async (req, res) => {
   const { upld_before, upld_after, page, limit } = req.query;
@@ -242,21 +330,30 @@ app.get("/videos/:userId", authenticateToken, async (req, res) => {
   }
 });
 
-app.get("/video/:id", (req, res) => {
+app.get("/video/:id", async (req, res) => {
   const { id } = req.params;
-  const resolution = req.query.res || "360";
-  const allowedRes = ["360", "480", "720"];
 
-  if (!allowedRes.includes(resolution))
-    return res.status(400).json({ error: "Invalid resolution" });
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(
+      "SELECT s3_key FROM user_videos WHERE video_id = ?",
+      [id]
+    );
 
-  const videoPath = getVideoPath(id, resolution);
+    if (rows.length === 0) return res.status(404).json({ error: "Video not found" });
 
-  if (!fileExists(videoPath))
-    return res.status(404).json({ error: "Video not found" });
+    const videoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${rows[0].s3_key}`;
 
-  streamVideo(videoPath, req, res);
+    res.status(200).json({ videoUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database/S3 error" });
+  } finally {
+    if (conn) conn.release();
+  }
 });
+
 
 app.delete("/video/:videoId", authenticateToken, async (req, res) => {
   const { videoId } = req.params;

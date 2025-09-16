@@ -1,65 +1,95 @@
-import { exec, spawn } from "child_process";
-import path from "path";
-import fs from "fs/promises";
-import { getDirname } from "./getDirname.js";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { spawn } from "child_process";
+import { pool_setup } from "./database.js";
+import { uploadToS3 } from "./s3";
 
-const __dirname = getDirname(import.meta.url);
+const REGION = process.env.AWS_REGION;
+const BUCKET = process.env.S3_BUCKET_NAME;
 
+const s3 = new S3Client({ region: REGION });
+const pool = await pool_setup();
 
-async function generateThumbnail(videoPath, videoId) {
-  const thumbnailsDir = path.join(__dirname, "../uploads/thumbnails");
-  await fs.mkdir(thumbnailsDir, { recursive: true });
-  const thumbnailName = `${videoId}.jpg`;
-  const thumbnailPath = path.join(thumbnailsDir, thumbnailName);
-
+async function generateThumbnailFromStream(inputStream, videoId) {
   return new Promise((resolve, reject) => {
-    const cmd = `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 "${thumbnailPath}"`;
-    exec(cmd, (err) => {
-      if (err) return reject(err);
-      resolve(thumbnailName);
-    });
+    const ffmpeg = spawn("ffmpeg", [
+      "-i", "pipe:0",
+      "-ss", "00:00:01",
+      "-vframes", "1",
+      "-f", "image2",
+      "pipe:1",
+    ]);
+
+    ffmpeg.on("error", reject);
+    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
+
+    uploadToS3(ffmpeg.stdout, `thumbnails/${videoId}.jpg`, "image/jpeg")
+      .then(() => resolve(`thumbnails/${videoId}.jpg`))
+      .catch(reject);
+
+    inputStream.pipe(ffmpeg.stdin, { end: true });
   });
 }
 
-async function transcodeVideo(videoPath, videoId) {
-  const uploadsDir = path.join(__dirname, "../uploads/videos");
-  await fs.mkdir(uploadsDir, { recursive: true });
+async function transcodeResolution(inputStream, s3Key, scale) {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-i", "pipe:0",
+      "-vf", `scale=${scale}`,
+      "-c:v", "libx264",
+      "-crf", "23",
+      "-preset", "medium",
+      "-c:a", "aac",
+      "-f", "mp4",
+      "pipe:1",
+    ]);
 
-  const resolutions = [
-    // { name: `${videoId}_360p.mp4`, scale: "640:360" },
-    // { name: `${videoId}_480p.mp4`, scale: "854:480" },
-    { name: `${videoId}_720p.mp4`, scale: "1280:720" },
-  ];
+    ffmpeg.on("error", reject);
+    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
 
-  // Wrap all ffmpeg processes in Promises
-  const transcodePromises = resolutions.map(
-    ({ name, scale }) =>
-      new Promise((resolve, reject) => {
-        const outputPath = path.join(uploadsDir, name);
-        const cmd = `ffmpeg -i "${videoPath}" -vf scale=${scale} -c:v libx264 -crf 23 -preset medium -c:a aac -strict -2 "${outputPath}"`;
+    uploadToS3(ffmpeg.stdout, s3Key, "video/mp4")
+      .then(resolve)
+      .catch(reject);
 
-        exec(cmd, (err) => {
-          if (err) {
-            console.error(`Error transcoding ${scale}:`, err);
-            reject(err);
-          } else {
-            console.log(`Created ${outputPath}`);
-            resolve(outputPath);
-          }
-        });
-      })
-  );
+    inputStream.pipe(ffmpeg.stdin, { end: true });
+  });
+}
 
-  await Promise.all(transcodePromises);
-
-  // Delete source file after transcoding regardless of successful
+async function transcodeAndUpload(videoId, s3KeyOriginal) {
+  let conn;
   try {
-    await fs.unlink(videoPath);
-    console.log("Deleted temp upload:", videoPath);
+    conn = await pool.getConnection();
+
+    // Thumbnail
+    const originalStream = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal })).then(res => res.Body);
+    const thumbnailKey = await generateThumbnailFromStream(originalStream, videoId);
+
+    //  Transcode
+    const resolutions = [
+      { name: `${videoId}_360p.mp4`, scale: "640:360" },
+      { name: `${videoId}_480p.mp4`, scale: "854:480" },
+      { name: `${videoId}_720p.mp4`, scale: "1280:720" },
+    ];
+
+    const transcodePromises = resolutions.map(async ({ name, scale }) => {
+      const stream = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal })).then(res => res.Body);
+      return transcodeResolution(stream, `videos/${name}`, scale);
+    });
+
+    await Promise.all(transcodePromises);
+
+    // Update DB
+    await conn.query(
+      "UPDATE user_videos SET status = ?, thumbnail = ? WHERE video_id = ?",
+      ["processed", thumbnailKey, videoId]
+    );
+
+    console.log(`Video ${videoId} processed and uploaded successfully`);
   } catch (err) {
-    console.error("Failed to delete temp file:", err);
+    console.error("Transcoding failed for videoId:", videoId, err);
+    if (conn) await conn.query("UPDATE user_videos SET status = ? WHERE video_id = ?", ["failed", videoId]);
+  } finally {
+    if (conn) conn.release();
   }
 }
 
-
-export { generateThumbnail, transcodeVideo }
+export default transcodeAndUpload;

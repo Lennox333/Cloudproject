@@ -1,0 +1,14 @@
+test s3 bucket
+set up rds
+We have a relatively small cap on the number of RDS instances. 
+Please tag your RDS instances with key purpose set to assessment-2 and qut-username set to your full 
+QUT username like n1234567@qut.edu.au. Teaching staff may need to delete old or improperly tagged RDS instances
+ to make room for students using it for their assessment.
+test rds aws, and remember tochange env in database.js
+
+
+ aws ec2 describe-key-pairs \
+          --key-names n11547413-New-Key-Pair \
+          --include-public-key \
+          --query "KeyPairs[].PublicKey" \
+          --profile=default
