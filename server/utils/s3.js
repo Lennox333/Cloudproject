@@ -1,16 +1,60 @@
+import fs from "fs";
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  PutBucketTaggingCommand,
+  HeadBucketCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
+import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 
-const REGION = "ap-southeast-2";
+const REGION = process.env.AWS_REGION || "ap-southeast-2";
 const BUCKET = process.env.S3_BUCKET_NAME;
+const QUT_USERNAME = process.env.QUT_USERNAME || "n11772891";
+const PURPOSE = process.env.PURPOSE || "assignment";
 
-const s3 = new S3Client({ region: REGION });
+const s3 = new S3Client({
+  region: REGION,
+  credentials: fromCognitoIdentityPool({
+    client: new CognitoIdentityClient({ region: REGION }),
+    identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID,
+  }),
+});
 
+// Create / Tag Bucket
+async function createIfNotExist() {
+  const tagCommand = new PutBucketTaggingCommand({
+    Bucket: BUCKET,
+    Tagging: {
+      TagSet: [
+        { Key: "qut-username", Value: QUT_USERNAME },
+        { Key: "purpose", Value: PURPOSE },
+      ],
+    },
+  });
 
+  try {
+    // Check bucket exists
+    await s3.send(new HeadBucketCommand({ Bucket: BUCKET }));
+    console.log(`Bucket "${BUCKET}" exists.`);
+
+    // Apply tags
+    const response = await s3.send(tagCommand);
+    console.log("Bucket tagged:", response);
+    return { success: true };
+  } catch (err) {
+    if (err.name === "NotFound") {
+      console.error(`Bucket "${BUCKET}" does not exist.`);
+      return { error: "Bucket not found" };
+    } else {
+      console.error("Error checking bucket:", err);
+      return { error: err.message };
+    }
+  }
+}
 
 // Generate pre-signed URL
 async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
@@ -19,34 +63,42 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
     command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
   } else if (operation === "putObject") {
     command = new PutObjectCommand({ Bucket: BUCKET, Key: key });
-  } else throw new Error("Invalid operation");
+  } else {
+    throw new Error("Invalid operation");
+  }
 
   return getSignedUrl(s3, command, { expiresIn });
 }
 
-// Upload buffer to S3 (used for thumbnails/transcoded files)
+// Upload buffer to S3
 async function uploadToS3(buffer, key, contentType) {
   await s3.send(
-    new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-    })
+    new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: buffer, ContentType: contentType })
   );
 }
 
-async function downloadFromS3(s3Key, localPath) {
-  const command = new GetObjectCommand({
-    Bucket: BUCKET,
-    Key: s3Key,
-  });
-  const response = await s3.send(command);
-  const stream = response.Body;
-  const writeStream = fs.createWriteStream(localPath);
-  return new Promise((resolve, reject) => {
-    stream.pipe(writeStream).on("finish", resolve).on("error", reject);
-  });
+
+// Delete video files (all resolutions + thumbnail)
+async function deleteVideoFiles(video) {
+  try {
+    const keysToDelete = [
+      `videos/${video.videoId}_360p.mp4`,
+      `videos/${video.videoId}_480p.mp4`,
+      `videos/${video.videoId}_720p.mp4`,
+    ];
+    if (video.thumbnailKey) keysToDelete.push(video.thumbnailKey);
+
+    for (const key of keysToDelete) {
+      await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+      console.log("Deleted S3 object:", key);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("Error deleting S3 files:", err);
+    return { error: "Failed to delete S3 files" };
+  }
 }
 
-export { getPresignedUrl, uploadToS3, downloadFromS3 };
+export { getPresignedUrl, uploadToS3, createIfNotExist, deleteVideoFiles };
+

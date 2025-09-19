@@ -1,5 +1,7 @@
 test s3 bucket
-set up rds
+set up rds then in database.js replace
+    host: process.env.RDS_HOST,       // RDS endpoint RDS_HOST=your-rds-endpoint.amazonaws.com
+
 We have a relatively small cap on the number of RDS instances. 
 Please tag your RDS instances with key purpose set to assessment-2 and qut-username set to your full 
 QUT username like n1234567@qut.edu.au. Teaching staff may need to delete old or improperly tagged RDS instances
@@ -12,3 +14,10 @@ test rds aws, and remember tochange env in database.js
           --include-public-key \
           --query "KeyPairs[].PublicKey" \
           --profile=default
+
+
+remember to put these into secret manager const REGION = "ap-southeast-2";
+const BUCKET = process.env.S3_BUCKET_NAME;
+const QUT_USERNAME = "n11772891"
+const PURPOSE = "assignment"
+process.env.COGNITO_IDENTITY_POOL_ID

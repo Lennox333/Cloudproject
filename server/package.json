@@ -2,8 +2,11 @@
   "name": "server",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.888.0",
-    "@aws-sdk/s3-request-presigner": "^3.888.0",
+    "@aws-sdk/client-cognito-identity": "^3.892.0",
+    "@aws-sdk/client-dynamodb": "^3.891.0",
+    "@aws-sdk/client-s3": "^3.892.0",
+    "@aws-sdk/credential-provider-cognito-identity": "^3.892.0",
+    "@aws-sdk/s3-request-presigner": "^3.892.0",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
