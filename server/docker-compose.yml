@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app         # Mount your project folder
+      - /usr/src/app/node_modules # Keep container node_modules separate
+    environment:
+      - NODE_ENV=development

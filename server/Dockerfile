@@ -1,12 +1,21 @@
 FROM node:20
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
+# Copy package.json and package-lock.json first for caching
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
+# Install AWS SDK
+RUN npm install aws-sdk
+
+# Copy everything else
 COPY . .
 
-RUN apt-get update && apt-get install -y ffmpeg 
-EXPOSE 5000
-CMD ["npm", "start"]
+# Expose port
+EXPOSE 3000
+
+# Use nodemon for live reload
+CMD ["npm", "run", "dev"]

@@ -5,10 +5,10 @@ import {
   DeleteItemCommand,
   ScanCommand
 } from "@aws-sdk/client-dynamodb";
+import { DYNAMO_USER_VIDEOS_TABLE } from "./secretManager.js";
 
 
 
-const DYNAMO_USER_VIDEOS_TABLE = process.env.DYNAMO_USER_VIDEOS_TABLE;
 
 async function saveUserVideo({
   userId,

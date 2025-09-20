@@ -270,3 +270,47 @@ app.post("/create-bucket", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+
+// import { deleteVideoFiles, getVideoById, deleteUserVideo } from "./utils/videos.js";
+
+// app.delete("/video/:videoId", authenticateToken, async (req, res, next) => {
+//   const { videoId } = req.params;
+
+//   try {
+//     const video = await getVideoById(videoId);
+//     if (!video || video.error) return res.status(404).json({ error: "Video not found" });
+
+//     // Allow deletion if the user owns the video OR is admin
+//     const username = req.user.username;
+//     const userId = req.user.userId;
+
+//     const isOwner = userId === video.userId;
+    
+//     // Check admin only if not owner
+//     if (!isOwner) {
+//       const command = new AdminListGroupsForUserCommand({
+//         UserPoolId: process.env.COGNITO_USER_POOL_ID,
+//         Username: username,
+//       });
+//       const response = await cognito.send(command);
+//       const groups = response.Groups.map(g => g.GroupName);
+//       if (!groups.includes("Admin")) {
+//         return res.status(403).json({ error: "Forbidden: not owner or admin" });
+//       }
+//     }
+
+//     // Delete from DynamoDB
+//     const result = await deleteUserVideo(videoId);
+//     if (result.error) return res.status(500).json({ error: "Failed to delete video" });
+
+//     // Delete S3 files
+//     await deleteVideoFiles(video);
+
+//     res.status(200).json({ success: true, message: `Deleted ${videoId}` });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Database or file deletion error" });
+//   }
+// });

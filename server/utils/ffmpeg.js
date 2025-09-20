@@ -2,12 +2,11 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
 import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
 import { uploadToS3 } from "./s3.js";
+import { AWS_REGION } from "./secretManager.js";
 
 
-const REGION = process.env.AWS_REGION;
-const BUCKET = process.env.S3_BUCKET_NAME;
 
-const s3 = new S3Client({ region: REGION });
+const s3 = new S3Client({ region: AWS_REGION });
 
 async function generateThumbnailFromStream(inputStream, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`; 

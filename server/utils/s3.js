@@ -10,20 +10,21 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
+import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
 
-const REGION = process.env.AWS_REGION || "ap-southeast-2";
-const BUCKET = process.env.S3_BUCKET_NAME;
-const QUT_USERNAME = process.env.QUT_USERNAME || "n11772891";
-const PURPOSE = process.env.PURPOSE || "assignment";
+
+// const s3 = new S3Client({
+//   region: AWS_REGION,
+//   credentials: fromCognitoIdentityPool({
+//     client: new CognitoIdentityClient({ region: AWS_REGION }),
+//     identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID,
+//   }),
+// });
+
 
 const s3 = new S3Client({
-  region: REGION,
-  credentials: fromCognitoIdentityPool({
-    client: new CognitoIdentityClient({ region: REGION }),
-    identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID,
-  }),
+  region: AWS_REGION,
 });
-
 // Create / Tag Bucket
 async function createIfNotExist() {
   const tagCommand = new PutBucketTaggingCommand({
