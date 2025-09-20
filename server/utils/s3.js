@@ -12,7 +12,6 @@ import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-id
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
 
-
 // const s3 = new S3Client({
 //   region: AWS_REGION,
 //   credentials: fromCognitoIdentityPool({
@@ -21,10 +20,10 @@ import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
 //   }),
 // });
 
-
 const s3 = new S3Client({
   region: AWS_REGION,
 });
+
 // Create / Tag Bucket
 async function createIfNotExist() {
   const tagCommand = new PutBucketTaggingCommand({
@@ -74,10 +73,14 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
 // Upload buffer to S3
 async function uploadToS3(buffer, key, contentType) {
   await s3.send(
-    new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: buffer, ContentType: contentType })
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    })
   );
 }
-
 
 // Delete video files (all resolutions + thumbnail)
 async function deleteVideoFiles(video) {
@@ -102,4 +105,3 @@ async function deleteVideoFiles(video) {
 }
 
 export { getPresignedUrl, uploadToS3, createIfNotExist, deleteVideoFiles };
-

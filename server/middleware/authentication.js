@@ -1,23 +1,41 @@
 import jwt from "jsonwebtoken";
-import dotenv from 'dotenv';
-dotenv.config();
-const JWT_SECRET = process.env.JWT_SECRET;
+import jwksClient from "jwks-rsa";
+import { AWS_REGION, USER_POOL_ID } from "../utils/secretManager.js";
 
-// Middleware for verifying tokens
-function authenticateToken(req, res, next) {
-  const token = req.cookies?.token; // read from cookie
-  if (!token) return res.status(401).json({ error: "Token required" });
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = user;
-    next();
+const client = jwksClient({
+  jwksUri: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`
+});
+
+// Get key from Cognito
+function getKey(header, callback) {
+  client.getSigningKey(header.kid, (err, key) => {
+    if (err) return callback(err);
+    const signingKey = key.getPublicKey();
+    callback(null, signingKey);
   });
 }
 
-// Helper function for creating tokens
-function generateToken(payload, expiresIn = "1h") {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+function authenticateToken(req, res, next) {
+  const token = req.cookies?.token || req.headers["authorization"]?.split(" ")[1];
+
+  if (!token) return res.status(401).json({ error: "Token required" });
+
+  jwt.verify(
+    token,
+    getKey,
+    {
+      algorithms: ["RS256"],
+      issuer: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}`,
+    },
+    (err, decoded) => {
+      if (err) return res.status(403).json({ error: "Invalid token" });
+      req.user = decoded;
+      console.log(req.user) // to be removed
+      next();
+    }
+  );
 }
 
-export { authenticateToken, generateToken };
+
+export { authenticateToken };

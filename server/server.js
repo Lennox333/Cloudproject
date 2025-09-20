@@ -1,16 +1,18 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import { randomUUID } from "crypto";
-import bcrypt from "bcrypt";
-import {
-  authenticateToken,
-  generateToken,
-} from "./middleware/authentication.js";
+import { authenticateToken } from "./middleware/authentication.js";
 import { transcodeAndUpload } from "./utils/ffmpeg.js";
 import cors from "cors";
-import { createIfNotExist, deleteVideoFiles, getPresignedUrl } from "./utils/s3.js";
-import { registerUser } from "./utils/users.js";
-import { deleteUserVideo, fetchVideos, getVideoById, saveUserVideo } from "./utils/videos.js";
+import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
+import { isAdmin, loginUser, logoutUser, registerUser } from "./utils/users.js";
+import {
+  deleteVideo,
+  fetchVideos,
+  getVideoById,
+  saveUserVideo,
+} from "./utils/videos.js";
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
-  const result = await registerUser(username, password);
+  const result = await registerUser(username, password, email);
 
   if (result.error) {
     return res.status(400).json(result);
@@ -48,59 +50,45 @@ app.post("/login", async (req, res) => {
     return res.status(400).json({ error: "Username and password required" });
   }
 
-  let conn;
   try {
-    conn = await pool.getConnection();
-    // Find user
-    const rows = await conn.query(
-      "SELECT user_id, password_hash FROM users WHERE username = ?",
-      [username]
-    );
+    // Authenticate with Cognito
+    const tokens = await loginUser(username, password);
 
-    if (rows.length === 0) {
-      return res.status(400).json({ error: "Invalid username or password" });
-    }
-
-    const user = rows[0];
-
-    // Compare passwords
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
-      return res.status(400).json({ error: "Invalid username or password" });
-    }
-
-    // Create JWT payload
-    const payload = { userId: user.user_id, username };
-    const token = generateToken(payload);
-
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true, // not accessible via JS
+    res.cookie("token", tokens.accessToken, {
+      httpOnly: true,
       secure: false,
       maxAge: 3 * 60 * 60 * 1000, // 3 hours
     });
 
-    res.status(200)({ message: "Login successful" });
+    res.status(200).json({
+      message: "Login successful",
+      ...tokens, // idToken, accessToken, refreshToken
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database error" });
-  } finally {
-    if (conn) conn.release(); // release back to pool
+    console.error("Cognito login error:", err);
+    res.status(400).json({ error: "Invalid username or password" });
   }
 });
 
-app.post("/logout", (req, res) => {
-  res.clearCookie("token"); // clear the login cookie
-  res.status(200).json({ message: "Logged out successfully" });
-});
+app.post("/logout", async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    1;
+    if (!token)
+      return res.status(400).json({ error: "Token required for logout" });
 
-app.get("/profile", authenticateToken, (req, res) => {
-  res.status(200)({
-    message: `Hello ${req.user.username}`,
-    userId: req.user.userId,
-  });
-});
+    const result = await logoutUser(token);
+    if (result.error)
+      return res.status(500).json({ error: "Failed to log out" });
 
+    // Clear cookie
+    res.clearCookie("token", { httpOnly: true, secure: false });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error("Logout error:", err);
+    res.status(500).json({ error: "Failed to log out" });
+  }
+});
 // ## VIDEOS
 
 app.post("/get-upload-url", authenticateToken, async (req, res) => {
@@ -214,14 +202,22 @@ app.get("/videos", async (req, res) => {
 
 app.get("/videos/:userId", authenticateToken, async (req, res) => {
   const { userId } = req.params;
-  if (req.user.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+  if (req.user.userId !== userId)
+    return res.status(403).json({ error: "Forbidden" });
 
   const { upld_before, upld_after, page, limit } = req.query;
-  const data = await fetchVideos({ userId, upld_before, upld_after, page, limit });
+  const data = await fetchVideos({
+    userId,
+    upld_before,
+    upld_after,
+    page,
+    limit,
+  });
   if (data.error) return res.status(500).json({ error: data.error });
 
   res.status(200).json(data);
 });
+
 
 
 app.delete("/video/:videoId", authenticateToken, async (req, res) => {
@@ -229,30 +225,25 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
 
   try {
     const video = await getVideoById(videoId);
+    if (!video || video.error) return res.status(404).json({ error: "Video not found" });
 
-    if (!video || video.error) {
-      return res.status(404).json({ error: "Video not found" });
-    }
-
-    // Check ownership
+    // Owner check
     if (req.user.userId !== video.userId) {
-      return res.status(403).json({ error: "Forbidden" });
+      // Not owner → check admin
+      const adminCheck = await isAdmin(req.user);
+      if (!adminCheck.success) {
+        return res.status(403).json({ error: adminCheck.error });
+      }
     }
 
-    // Delete from DynamoDB
-    const result = await deleteUserVideo(videoId);
-    if (result.error) {
-      return res.status(500).json({ error: "Failed to delete video" });
-    }
+    const result = await deleteVideo(video);
+    if (result.error) return res.status(500).json({ error: result.error });
 
-    // Delete S3 files
-    await deleteVideoFiles(video);
+    res.status(200).json({ success: true, message: `Deleted ${video.videoId}` });
 
-    console.log("Deleted ", videoId);
-    res.status(200).json({ success: true, message: `Deleted ${videoId}` });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Database or file deletion error" });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -263,54 +254,8 @@ app.post("/create-bucket", async (req, res) => {
   res.status(200).json(result);
 });
 
-
-
 //##### ENDPOINTS ####
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
-
-// import { deleteVideoFiles, getVideoById, deleteUserVideo } from "./utils/videos.js";
-
-// app.delete("/video/:videoId", authenticateToken, async (req, res, next) => {
-//   const { videoId } = req.params;
-
-//   try {
-//     const video = await getVideoById(videoId);
-//     if (!video || video.error) return res.status(404).json({ error: "Video not found" });
-
-//     // Allow deletion if the user owns the video OR is admin
-//     const username = req.user.username;
-//     const userId = req.user.userId;
-
-//     const isOwner = userId === video.userId;
-    
-//     // Check admin only if not owner
-//     if (!isOwner) {
-//       const command = new AdminListGroupsForUserCommand({
-//         UserPoolId: process.env.COGNITO_USER_POOL_ID,
-//         Username: username,
-//       });
-//       const response = await cognito.send(command);
-//       const groups = response.Groups.map(g => g.GroupName);
-//       if (!groups.includes("Admin")) {
-//         return res.status(403).json({ error: "Forbidden: not owner or admin" });
-//       }
-//     }
-
-//     // Delete from DynamoDB
-//     const result = await deleteUserVideo(videoId);
-//     if (result.error) return res.status(500).json({ error: "Failed to delete video" });
-
-//     // Delete S3 files
-//     await deleteVideoFiles(video);
-
-//     res.status(200).json({ success: true, message: `Deleted ${videoId}` });
-
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Database or file deletion error" });
-//   }
-// });

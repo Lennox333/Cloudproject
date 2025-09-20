@@ -6,6 +6,8 @@ import {
   ScanCommand
 } from "@aws-sdk/client-dynamodb";
 import { DYNAMO_USER_VIDEOS_TABLE } from "./secretManager.js";
+import { dynamo } from "./dynamoSetup.js";
+import { deleteVideoFiles } from "./s3.js";
 
 
 
@@ -108,7 +110,7 @@ async function updateVideoStatus(videoId, status) {
 
 async function fetchVideos({ userId, upld_before, upld_after, page = 1, limit = 10 }) {
   const params = {
-    TableName: process.env.DYNAMO_USER_VIDEOS_TABLE,
+    TableName: DYNAMO_USER_VIDEOS_TABLE,
     Limit: limit,
     FilterExpression: "#st = :processed", // Only processed videos
     ExpressionAttributeNames: { "#st": "status" },
@@ -170,5 +172,23 @@ async function deleteUserVideo(videoId) {
 }
 
 
+async function deleteVideo(video) {
+  try {
+    // Delete from DynamoDB
+    const dbResult = await deleteUserVideo(video.videoId);
+    if (dbResult.error) {
+      return { success: false, error: "Failed to delete video from database" };
+    }
 
-export { saveUserVideo, getVideoById, addVideoThumbnail, updateVideoStatus, deleteUserVideo, fetchVideos };
+    // Delete associated S3 files
+    await deleteVideoFiles(video);
+
+    console.log("Deleted video:", video.videoId);
+    return { success: true };
+  } catch (err) {
+    console.error("Error deleting video:", err);
+    return { success: false, error: "Database or file deletion error" };
+  }
+}
+
+export { saveUserVideo, getVideoById, addVideoThumbnail, updateVideoStatus, deleteVideo, fetchVideos };

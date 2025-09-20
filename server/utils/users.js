@@ -1,91 +1,83 @@
-import bcrypt from "bcrypt";
-import { randomUUID } from "crypto";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-
 import {
-  CognitoIdentityProviderClient,
+  GlobalSignOutCommand,
+  SignUpCommand,
+  InitiateAuthCommand,
   AdminListGroupsForUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { AWS_ACCESS_KEY_ID, AWS_REGION, AWS_SECRET_ACCESS_KEY, DYNAMO_TABLE } from "./secretManager.js";
+import { COGNITO_CLIENT_ID, USER_POOL_ID } from "./secretManager.js";
+import { cognitoClient } from "./cognitoClient.js";
 
-
-const cognito = new CognitoIdentityProviderClient({ region: AWS_REGION });
 
 // Setup DynamoDB client
-const dynamo = new DynamoDBClient({
-  region: AWS_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  },
-});
 
-async function registerUser(username, password) {
-  if (!username || !password) {
-    return { error: "Username and password required" };
-  }
-
+async function registerUser(username, password, email) {
   try {
-    // Check if username already exists
-    const getUserCmd = new GetItemCommand({
-      TableName: DYNAMO_TABLE,
-      Key: {
-        username: { S: username }, // username is primary key
-      },
+    const command = new SignUpCommand({
+      ClientId: COGNITO_CLIENT_ID,
+      Username: username,
+      Password: password,
+      UserAttributes: [{ Name: "email", Value: email }],
     });
 
-    const existingUser = await dynamo.send(getUserCmd);
-    if (existingUser.Item) {
-      return { error: "Username already exists" };
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Generate UUID for user id
-    const userId = randomUUID();
-
-    // Insert user
-    const putUserCmd = new PutItemCommand({
-      TableName: DYNAMO_TABLE,
-      Item: {
-        user_id: { S: userId },
-        username: { S: username },
-        password_hash: { S: passwordHash },
-      },
-    });
-
-    await dynamo.send(putUserCmd);
-
-    return { message: "User registered successfully", userId };
+    const response = await cognitoClient.send(command);
+    return { message: "User registered. Confirm email to activate.", response };
   } catch (err) {
-    console.error("DynamoDB error:", err);
-    return { error: "Database error" };
+    console.error("Cognito error:", err);
+    return { error: err.message };
   }
 }
 
+async function loginUser(username, password) {
+  const command = new InitiateAuthCommand({
+    AuthFlow: "USER_PASSWORD_AUTH",
+    ClientId: COGNITO_CLIENT_ID,
+    AuthParameters: {
+      USERNAME: username,
+      PASSWORD: password,
+    },
+  });
 
-// Middleware to check if user is Admin
-async function isAdmin(req, res, next) {
+  const response = await cognitoClient.send(command);
+
+  return {
+    idToken: response.AuthenticationResult.IdToken,
+    accessToken: response.AuthenticationResult.AccessToken,
+    refreshToken: response.AuthenticationResult.RefreshToken,
+  };
+}
+
+async function logoutUser(accessToken) {
   try {
-    const username = req.user.username; // set by authenticateToken
+    await cognitoClient.send(
+      new GlobalSignOutCommand({ AccessToken: accessToken })
+    );
+    return { success: true };
+  } catch (err) {
+    console.error("Cognito logout error:", err);
+    return { error: err.message };
+  }
+}
+
+async function isAdmin(user) {
+  try {
     const command = new AdminListGroupsForUserCommand({
       UserPoolId: USER_POOL_ID,
-      Username: username,
+      Username: user.username,
     });
+
     const response = await cognito.send(command);
-    const groups = response.Groups.map((g) => g.GroupName);
+    const groups = response.Groups.map(g => g.GroupName);
 
     if (groups.includes("Admin")) {
-      next(); // user is admin
+      return { success: true };
     } else {
-      res.status(403).json({ error: "Admin access required" });
+      return { success: false, error: "Admin access required" };
     }
   } catch (err) {
     console.error("Error checking admin group:", err);
-    res.status(500).json({ error: "Server error" });
+    return { success: false, error: "Server error" };
   }
 }
 
-export { registerUser, isAdmin };
+
+export { registerUser, loginUser, logoutUser, isAdmin };

@@ -12,3 +12,5 @@ export const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 
 export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
+
+export const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID

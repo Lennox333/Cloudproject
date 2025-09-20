@@ -21,3 +21,8 @@ const BUCKET = process.env.S3_BUCKET_NAME;
 const QUT_USERNAME = "n11772891"
 const PURPOSE = "assignment"
 process.env.COGNITO_IDENTITY_POOL_ID
+
+
+docker start -ai server-app-1
+
+docker-compose exec app npm install
