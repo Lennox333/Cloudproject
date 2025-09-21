@@ -5,7 +5,7 @@ import { authenticateToken } from "./middleware/authentication.js";
 import { transcodeAndUpload } from "./utils/ffmpeg.js";
 import cors from "cors";
 import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
-import { isAdmin, loginUser, logoutUser, registerUser } from "./utils/users.js";
+import { isAdmin, loginUser, logoutUser, registerUser, confirmRegistration } from "./utils/users.js";
 import {
   deleteVideo,
   fetchVideos,
@@ -33,7 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 //## USER
 
 app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body; // Fixed: Added email to the destructured object.
   const result = await registerUser(username, password, email);
 
   if (result.error) {
@@ -41,6 +41,25 @@ app.post("/register", async (req, res) => {
   }
 
   res.status(200).json(result);
+});
+
+app.post("/confirm-registration", async (req, res) => {
+  const { username, confirmationCode } = req.body;
+
+  if (!username || !confirmationCode) {
+    return res.status(400).json({ error: "Username and confirmation code are required." });
+  }
+
+  try {
+    const result = await confirmRegistration(username, confirmationCode);
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.status(200).json({ message: result.message, response: result.response });
+  } catch (err) {
+    console.error("Endpoint error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/login", async (req, res) => {

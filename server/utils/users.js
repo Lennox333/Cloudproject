@@ -3,17 +3,29 @@ import {
   SignUpCommand,
   InitiateAuthCommand,
   AdminListGroupsForUserCommand,
+  ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { COGNITO_CLIENT_ID, USER_POOL_ID } from "./secretManager.js";
+import { COGNITO_CLIENT_ID, USER_POOL_ID, COGNITO_CLIENT_SECRET } from "./secretManager.js";
 import { cognitoClient } from "./cognitoClient.js";
+import { createHmac } from "crypto"; // Import crypto library
 
 
 // Setup DynamoDB client
 
+function calculateSecretHash(username) {
+  const message = username + COGNITO_CLIENT_ID;
+  const hmac = createHmac("sha256", COGNITO_CLIENT_SECRET);
+  hmac.update(message);
+  return hmac.digest("base64");
+}
+
 async function registerUser(username, password, email) {
   try {
+    const secretHash = calculateSecretHash(username);
+
     const command = new SignUpCommand({
       ClientId: COGNITO_CLIENT_ID,
+      SecretHash: secretHash, // Added SecretHash
       Username: username,
       Password: password,
       UserAttributes: [{ Name: "email", Value: email }],
@@ -28,12 +40,15 @@ async function registerUser(username, password, email) {
 }
 
 async function loginUser(username, password) {
+  const secretHash = calculateSecretHash(username);
+
   const command = new InitiateAuthCommand({
     AuthFlow: "USER_PASSWORD_AUTH",
     ClientId: COGNITO_CLIENT_ID,
     AuthParameters: {
       USERNAME: username,
       PASSWORD: password,
+      SECRET_HASH: secretHash, // Added SecretHash
     },
   });
 
@@ -65,7 +80,7 @@ async function isAdmin(user) {
       Username: user.username,
     });
 
-    const response = await cognito.send(command);
+    const response = await cognitoClient.send(command);
     const groups = response.Groups.map(g => g.GroupName);
 
     if (groups.includes("Admin")) {
@@ -79,5 +94,23 @@ async function isAdmin(user) {
   }
 }
 
+async function confirmRegistration(username, confirmationCode) {
+  try {
+    const secretHash = calculateSecretHash(username);
+    
+    const command = new ConfirmSignUpCommand({
+      ClientId: COGNITO_CLIENT_ID,
+      SecretHash: secretHash, // Added SecretHash
+      Username: username,
+      ConfirmationCode: confirmationCode,
+    });
+    
+    const response = await cognitoClient.send(command);
+    return { message: "User registration confirmed successfully.", response };
+  } catch (err) {
+    console.error("Cognito error:", err);
+    return { error: err.message };
+  }
+}
 
-export { registerUser, loginUser, logoutUser, isAdmin };
+export { registerUser, loginUser, logoutUser, isAdmin, confirmRegistration };
