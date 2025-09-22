@@ -5,14 +5,19 @@ import { authenticateToken } from "./middleware/authentication.js";
 import { transcodeAndUpload } from "./utils/ffmpeg.js";
 import cors from "cors";
 import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
-import { isAdmin, loginUser, logoutUser, registerUser, confirmRegistration } from "./utils/users.js";
+import {
+  isAdmin,
+  loginUser,
+  logoutUser,
+  registerUser,
+  confirmRegistration,
+} from "./utils/users.js";
 import {
   deleteVideo,
   fetchVideos,
   getVideoById,
   saveUserVideo,
 } from "./utils/videos.js";
-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,7 +52,9 @@ app.post("/confirm-registration", async (req, res) => {
   const { username, confirmationCode } = req.body;
 
   if (!username || !confirmationCode) {
-    return res.status(400).json({ error: "Username and confirmation code are required." });
+    return res
+      .status(400)
+      .json({ error: "Username and confirmation code are required." });
   }
 
   try {
@@ -55,7 +62,9 @@ app.post("/confirm-registration", async (req, res) => {
     if (result.error) {
       return res.status(400).json({ error: result.error });
     }
-    res.status(200).json({ message: result.message, response: result.response });
+    res
+      .status(200)
+      .json({ message: result.message, response: result.response });
   } catch (err) {
     console.error("Endpoint error:", err);
     res.status(500).json({ error: "Server error" });
@@ -211,9 +220,14 @@ app.get("/videos/:id/status", authenticateToken, async (req, res) => {
 });
 
 app.get("/videos", async (req, res) => {
-  const { upld_before, upld_after, page, limit } = req.query;
+  const { upld_before, upld_after, limit, lastKey } = req.query;
 
-  const data = await fetchVideos({ upld_before, upld_after, page, limit });
+  const data = await fetchVideos({
+    upld_before,
+    upld_after,
+    limit,
+    lastKey: lastKey ? JSON.parse(lastKey) : null,
+  });
   if (data.error) return res.status(500).json({ error: data.error });
 
   res.status(200).json(data);
@@ -224,31 +238,30 @@ app.get("/videos/:userId", authenticateToken, async (req, res) => {
   if (req.user.userId !== userId)
     return res.status(403).json({ error: "Forbidden" });
 
-  const { upld_before, upld_after, page, limit } = req.query;
+  const { upld_before, upld_after, limit, lastKey } = req.query;
   const data = await fetchVideos({
     userId,
     upld_before,
     upld_after,
-    page,
     limit,
+    lastKey: lastKey ? JSON.parse(lastKey) : null,
   });
   if (data.error) return res.status(500).json({ error: data.error });
 
   res.status(200).json(data);
 });
 
-
-
 app.delete("/video/:videoId", authenticateToken, async (req, res) => {
   const { videoId } = req.params;
 
   try {
     const video = await getVideoById(videoId);
-    if (!video || video.error) return res.status(404).json({ error: "Video not found" });
+    if (!video || video.error)
+      return res.status(404).json({ error: "Video not found" });
 
     // Owner check
     if (req.user.userId !== video.userId) {
-      // Not owner → check admin
+      // Not owner -> check admin
       const adminCheck = await isAdmin(req.user);
       if (!adminCheck.success) {
         return res.status(403).json({ error: adminCheck.error });
@@ -258,14 +271,14 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
     const result = await deleteVideo(video);
     if (result.error) return res.status(500).json({ error: result.error });
 
-    res.status(200).json({ success: true, message: `Deleted ${video.videoId}` });
-
+    res
+      .status(200)
+      .json({ success: true, message: `Deleted ${video.videoId}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 app.post("/create-bucket", async (req, res) => {
   const result = await createIfNotExist();

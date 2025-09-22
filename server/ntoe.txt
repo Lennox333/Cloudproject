@@ -26,3 +26,27 @@ process.env.COGNITO_IDENTITY_POOL_ID
 docker start -ai server-app-1
 
 docker-compose exec app npm install
+
+
+curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ln607090",
+    "password": "TestPassword123!",
+    "email": "ln607090@gmail.com"
+  }'
+
+curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/confirm-registration \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ln607090",
+    "confirmationCode": "021534"
+  }'
+
+
+  curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ln607090",
+    "password": "TestPassword123!"
+  }'

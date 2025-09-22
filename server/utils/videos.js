@@ -1,17 +1,15 @@
 import { 
-  PutItemCommand,
-  GetItemCommand,
-  UpdateItemCommand,
-  DeleteItemCommand,
-  ScanCommand
-} from "@aws-sdk/client-dynamodb";
-import { DYNAMO_USER_VIDEOS_TABLE } from "./secretManager.js";
-import { dynamo } from "./dynamoSetup.js";
+  PutCommand,
+  UpdateCommand,
+  DeleteCommand,
+  QueryCommand,
+  
+} from "@aws-sdk/lib-dynamodb";
+import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
+import { DYNAMO_TABLE, USER_KEY, VIDEO_KEY } from "./secretManager.js";
 
-
-
-
+// Save a new video for a user
 async function saveUserVideo({
   userId,
   videoId,
@@ -21,174 +19,190 @@ async function saveUserVideo({
   thumbnailKey = null,
 }) {
   try {
-    const putCmd = new PutItemCommand({
-      TableName: DYNAMO_USER_VIDEOS_TABLE,
+    const params = {
+      TableName: DYNAMO_TABLE,
       Item: {
-        video_id: { S: videoId },
-        user_id: { S: userId },
-        video_title: { S: title },
-        description: description ? { S: description } : { NULL: true },
-        status: { S: status },
-        thumbnail_key: thumbnailKey ? { S: thumbnailKey } : { NULL: true },
-        created_at: { S: new Date().toISOString() },
+        [USER_KEY]: userId,
+        [VIDEO_KEY]: videoId,
+        video_title: title,
+        description,
+        status,
+        thumbnail_key: thumbnailKey,
+        created_at: new Date().toISOString(),
       },
-    });
+      ConditionExpression: "attribute_not_exists(#vid)", // prevent overwrite
+      ExpressionAttributeNames: { "#vid": VIDEO_KEY },
+    };
 
-    await dynamo.send(putCmd);
+    await docClient.send(new PutCommand(params));
     return { message: "Video metadata saved", videoId };
   } catch (err) {
-    console.error("DynamoDB error:", err);
+    console.error("DynamoDB saveUserVideo error:", err);
     return { error: "Failed to save video metadata" };
   }
 }
 
-
+// Get a video by its videoId (using GSI)
 async function getVideoById(videoId) {
   try {
-    const result = await dynamo.send(
-      new GetItemCommand({
-        TableName: DYNAMO_USER_VIDEOS_TABLE,
-        Key: { video_id: { S: videoId } },
-      })
-    );
+    const params = {
+      TableName: DYNAMO_TABLE,
+      IndexName: "VideoIdIndex",
+      KeyConditionExpression: "#vid = :vid",
+      ExpressionAttributeNames: { "#vid": VIDEO_KEY },
+      ExpressionAttributeValues: { ":vid": videoId },
+      Limit: 1,
+    };
 
-    if (!result.Item) return { error: "Video not found" };
+    const result = await docClient.send(new QueryCommand(params));
+    const video = result.Items?.[0];
+
+    if (!video) return { error: "Video not found" };
 
     return {
-      videoId: result.Item.video_id.S,
-      userId: result.Item.user_id.S,
-      title: result.Item.video_title.S,
-      description: result.Item.description?.S || null,
-      status: result.Item.status.S,
-      thumbnailKey: result.Item.thumbnail_key?.S || null,
-      createdAt: result.Item.created_at.S,
+      videoId: video[VIDEO_KEY],
+      userId: video[USER_KEY],
+      title: video.video_title,
+      description: video.description || null,
+      status: video.status,
+      thumbnailKey: video.thumbnail_key || null,
+      createdAt: video.created_at,
     };
   } catch (err) {
-    console.error("DynamoDB error:", err);
+    console.error("DynamoDB getVideoById error:", err);
     return { error: "Database error" };
   }
 }
 
-
+// Add or update video thumbnail
 async function addVideoThumbnail(videoId, thumbnailKey) {
   try {
-    await dynamo.send(
-      new UpdateItemCommand({
-        TableName: DYNAMO_USER_VIDEOS_TABLE,
-        Key: { video_id: { S: videoId } },
-        UpdateExpression: "SET thumbnail_key = :thumbnail",
-        ExpressionAttributeValues: {
-          ":thumbnail": { S: thumbnailKey },
-        },
-      })
-    );
+    const params = {
+      TableName: DYNAMO_TABLE,
+      Key: { [VIDEO_KEY]: videoId },
+      UpdateExpression: "SET thumbnail_key = :thumbnail",
+      ExpressionAttributeValues: { ":thumbnail": thumbnailKey },
+    };
 
+    await docClient.send(new UpdateCommand(params));
     return { message: "Thumbnail updated successfully" };
   } catch (err) {
-    console.error("Error updating thumbnail:", err);
+    console.error("DynamoDB addVideoThumbnail error:", err);
     return { error: "Failed to update thumbnail" };
   }
 }
 
-
+// Update video status
 async function updateVideoStatus(videoId, status) {
   try {
-    await dynamo.send(
-      new UpdateItemCommand({
-        TableName: DYNAMO_USER_VIDEOS_TABLE,
-        Key: { video_id: { S: videoId } },
-        UpdateExpression: "SET #st = :status",
-        ExpressionAttributeNames: { "#st": "status" },
-        ExpressionAttributeValues: { ":status": { S: status } },
-      })
-    );
+    const params = {
+      TableName: DYNAMO_TABLE,
+      Key: { [VIDEO_KEY]: videoId },
+      UpdateExpression: "SET #st = :status",
+      ExpressionAttributeNames: { "#st": "status" },
+      ExpressionAttributeValues: { ":status": status },
+    };
+
+    await docClient.send(new UpdateCommand(params));
+    return { message: "Status updated successfully" };
   } catch (err) {
-    console.error(`Failed to update status for ${videoId}`, err);
+    console.error(`DynamoDB updateVideoStatus error for ${videoId}:`, err);
+    return { error: "Failed to update status" };
   }
 }
 
-
-async function fetchVideos({ userId, upld_before, upld_after, page = 1, limit = 10 }) {
-  const params = {
-    TableName: DYNAMO_USER_VIDEOS_TABLE,
-    Limit: limit,
-    FilterExpression: "#st = :processed", // Only processed videos
-    ExpressionAttributeNames: { "#st": "status" },
-    ExpressionAttributeValues: { ":processed": { S: "processed" } },
-  };
-
-  // Add user filter if needed
-  if (userId) {
-    params.FilterExpression += " AND user_id = :uid";
-    params.ExpressionAttributeValues[":uid"] = { S: userId };
-  }
-
-  // Add date filters if provided
-  if (upld_before) {
-    params.FilterExpression += " AND created_at <= :before";
-    params.ExpressionAttributeValues[":before"] = { S: upld_before };
-  }
-  if (upld_after) {
-    params.FilterExpression += " AND created_at >= :after";
-    params.ExpressionAttributeValues[":after"] = { S: upld_after };
-  }
+// Fetch videos for a user with optional date filters and pagination
+async function fetchVideos({
+  userId,
+  upld_before,
+  upld_after,
+  limit = 10,
+  lastKey = null,
+}) {
+  if (!userId) return { error: "User ID is required for query" };
 
   try {
-    const result = await dynamo.send(new ScanCommand(params));
-    const items = result.Items || [];
+    const params = {
+      TableName: DYNAMO_TABLE,
+      KeyConditionExpression: "#uid = :uid",
+      ExpressionAttributeNames: { "#uid": USER_KEY },
+      ExpressionAttributeValues: { ":uid": userId },
+      Limit: limit,
+      ExclusiveStartKey: lastKey || undefined,
+    };
 
-    const videos = items.map((item) => ({
-      videoId: item.video_id.S,
-      userId: item.user_id.S,
-      title: item.video_title.S,
-      description: item.description?.S || null,
-      status: item.status.S,
-      thumbnailKey: item.thumbnail_key?.S || null,
-      createdAt: item.created_at.S,
+    // Optional filter by created_at
+    const filterExpressions = [];
+    if (upld_before) {
+      filterExpressions.push("created_at <= :before");
+      params.ExpressionAttributeValues[":before"] = upld_before;
+    }
+    if (upld_after) {
+      filterExpressions.push("created_at >= :after");
+      params.ExpressionAttributeValues[":after"] = upld_after;
+    }
+    if (filterExpressions.length) {
+      params.FilterExpression = filterExpressions.join(" AND ");
+    }
+
+    const result = await docClient.send(new QueryCommand(params));
+    const videos = (result.Items || []).map((item) => ({
+      videoId: item[VIDEO_KEY],
+      userId: item[USER_KEY],
+      title: item.video_title,
+      description: item.description || null,
+      status: item.status,
+      thumbnailKey: item.thumbnail_key || null,
+      createdAt: item.created_at,
     }));
 
-    return { videos, total: videos.length, page, limit };
+    return {
+      videos,
+      total: videos.length,
+      lastKey: result.LastEvaluatedKey || null,
+      limit,
+    };
   } catch (err) {
     console.error("DynamoDB fetchVideos error:", err);
     return { error: "Failed to fetch videos" };
   }
 }
 
+// Delete a video from DynamoDB
 async function deleteUserVideo(videoId) {
   try {
-    const deleteCmd = new DeleteItemCommand({
-      TableName: DYNAMO_USER_VIDEOS_TABLE,
-      Key: {
-        video_id: { S: videoId },
-      },
-    });
-
-    await dynamo.send(deleteCmd);
+    await docClient.send(
+      new DeleteCommand({ TableName: DYNAMO_TABLE, Key: { [VIDEO_KEY]: videoId } })
+    );
     return { success: true, message: `Deleted ${videoId}` };
   } catch (err) {
-    console.error("Delete video DB error", err);
+    console.error("DynamoDB deleteUserVideo error:", err);
     return { error: "Failed to delete video" };
   }
 }
 
-
+// Delete video from Dynamo and associated S3 files
 async function deleteVideo(video) {
   try {
-    // Delete from DynamoDB
     const dbResult = await deleteUserVideo(video.videoId);
-    if (dbResult.error) {
+    if (dbResult.error)
       return { success: false, error: "Failed to delete video from database" };
-    }
 
-    // Delete associated S3 files
     await deleteVideoFiles(video);
 
     console.log("Deleted video:", video.videoId);
     return { success: true };
   } catch (err) {
-    console.error("Error deleting video:", err);
+    console.error("DynamoDB deleteVideo error:", err);
     return { success: false, error: "Database or file deletion error" };
   }
 }
 
-export { saveUserVideo, getVideoById, addVideoThumbnail, updateVideoStatus, deleteVideo, fetchVideos };
+export {
+  saveUserVideo,
+  getVideoById,
+  addVideoThumbnail,
+  updateVideoStatus,
+  deleteVideo,
+  fetchVideos,
+};
