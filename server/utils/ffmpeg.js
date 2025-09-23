@@ -5,7 +5,8 @@ import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
-
+import { tmpdir } from "os";
+import { join } from "path";
 // async function generateThumbnailFromStream(s3Url, videoId) {
 //   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 //   return new Promise((resolve, reject) => {
