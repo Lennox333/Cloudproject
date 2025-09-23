@@ -29,7 +29,6 @@ async function generateThumbnailFromStream(s3Url, videoId) {
       })
       .catch(reject);
 
-    inputStream.pipe(ffmpeg.stdin, { end: true });
   });
 }
 
@@ -65,7 +64,7 @@ async function transcodeResolution(inputStream, s3Key, scale) {
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
-
+    console.log(s3Url)
     // Transcode resolutions
     const resolutions = [
       { name: `${videoId}_360p.mp4`, scale: "640:360" },
