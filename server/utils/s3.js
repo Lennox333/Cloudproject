@@ -20,7 +20,7 @@ import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
 //   }),
 // });
 
-const s3 = new S3Client({
+export const s3 = new S3Client({
   region: AWS_REGION,
 });
 
