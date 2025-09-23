@@ -6,37 +6,37 @@ import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
 
 
-// async function generateThumbnailFromStream(s3Url, videoId) {
-//   const thumbnailKey = `thumbnails/${videoId}.jpg`;
-//   return new Promise((resolve, reject) => {
-//     const ffmpeg = spawn("ffmpeg", [
-//       "-i",
-//       s3Url, // feed ffmpeg the presigned URL directly
-//       "-ss",
-//       "00:00:01",
-//       "-vframes",
-//       "1",
-//       "-f",
-//       "image2",
-//       "pipe:1",
-//     ]);
-
-//     ffmpeg.on("error", reject);
-//     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-
-//     uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
-//       .then(async () => {
-//         await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
-//         resolve(thumbnailKey);
-//       })
-//       .catch(reject);
-
-//   });
-// }
-
-
-
 async function generateThumbnailFromStream(s3Url, videoId) {
+  const thumbnailKey = `thumbnails/${videoId}.jpg`;
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      s3Url, // feed ffmpeg the presigned URL directly
+      "-ss",
+      "00:00:01",
+      "-vframes",
+      "1",
+      "-f",
+      "image2",
+      "pipe:1",
+    ]);
+
+    ffmpeg.on("error", reject);
+    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
+
+    uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
+      .then(async () => {
+        await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
+        resolve(thumbnailKey);
+      })
+      .catch(reject);
+
+  });
+}
+
+
+
+async function generateThumbnailMultipart(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 
   return new Promise((resolve, reject) => {
@@ -75,6 +75,42 @@ async function generateThumbnailFromStream(s3Url, videoId) {
         resolve(thumbnailKey);
       })
       .catch(reject);
+  });
+}
+
+
+
+import fs from "fs";
+import path from "path";
+async function generateThumbnailLocal(s3Url, videoId) {
+  const thumbnailDir = path.resolve("./thumbnails");
+  if (!fs.existsSync(thumbnailDir)) fs.mkdirSync(thumbnailDir, { recursive: true });
+
+  const thumbnailPath = path.join(thumbnailDir, `${videoId}.jpg`);
+
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      s3Url,          // Input video URL (can be presigned)
+      "-ss",
+      "00:00:01",     // Seek to 1 second
+      "-vframes",
+      "1",            // Take only one frame
+      thumbnailPath,  // Output file path
+    ]);
+
+    ffmpeg.on("error", reject);
+    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
+
+    ffmpeg.on("close", async (code) => {
+      if (code === 0) {
+        // Optional: upload to S3 here
+        // await uploadToS3(fs.createReadStream(thumbnailPath), `thumbnails/${videoId}.jpg`, "image/jpeg");
+        resolve(thumbnailPath);
+      } else {
+        reject(new Error(`ffmpeg exited with code ${code}`));
+      }
+    });
   });
 }
 
