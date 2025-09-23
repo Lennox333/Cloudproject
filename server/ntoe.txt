@@ -61,7 +61,7 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
   }' | jq -r '.accessToken'
 
 
-  TOKEN=$(curl -s -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/login \
+  TOKEN=$(curl -s -X POST http://ec2-13-54-231-70.ap-southeast-2.compute.amazonaws.com:5000/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ln607090","password":"TestPassword123!"}' | jq -r '.accessToken')
 
@@ -103,7 +103,7 @@ S3_KEY="videos/e7795a51-2742-42ea-9d41-39739e13e5f4-example.mp4"
 TITLE="Test Video"
 DESCRIPTION="Optional description"
 
-curl -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/transcodetest \
+curl -X POST http://ec2-13-54-231-70.ap-southeast-2.compute.amazonaws.com:5000/transcodetest \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d "{
