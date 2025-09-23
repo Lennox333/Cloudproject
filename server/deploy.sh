@@ -6,3 +6,4 @@ docker volume rm $(docker volume ls -q)
 
 git pull
 docker-compose up -d
+docker logs -f server-app-1 
