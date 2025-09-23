@@ -3,34 +3,81 @@ import { spawn } from "child_process";
 import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
 import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
+import { Upload } from "@aws-sdk/lib-storage";
+
+
+// async function generateThumbnailFromStream(s3Url, videoId) {
+//   const thumbnailKey = `thumbnails/${videoId}.jpg`;
+//   return new Promise((resolve, reject) => {
+//     const ffmpeg = spawn("ffmpeg", [
+//       "-i",
+//       s3Url, // feed ffmpeg the presigned URL directly
+//       "-ss",
+//       "00:00:01",
+//       "-vframes",
+//       "1",
+//       "-f",
+//       "image2",
+//       "pipe:1",
+//     ]);
+
+//     ffmpeg.on("error", reject);
+//     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
+
+//     uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
+//       .then(async () => {
+//         await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
+//         resolve(thumbnailKey);
+//       })
+//       .catch(reject);
+
+//   });
+// }
+
+
 
 async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
+
   return new Promise((resolve, reject) => {
+    // Spawn ffmpeg to grab a single frame at 1s
     const ffmpeg = spawn("ffmpeg", [
       "-i",
-      s3Url, // feed ffmpeg the presigned URL directly
+      s3Url,       // Input video URL
       "-ss",
-      "00:00:01",
+      "00:00:01",  // Seek to 1 second
       "-vframes",
-      "1",
+      "1",         // Only one frame
       "-f",
       "image2",
-      "pipe:1",
+      "pipe:1",    // Output to stdout
     ]);
 
     ffmpeg.on("error", reject);
     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
 
-    uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
+    // Multipart upload via AWS SDK v3
+    const upload = new Upload({
+      client: s3Client,
+      params: {
+        Bucket: BUCKET,
+        Key: thumbnailKey,
+        Body: ffmpeg.stdout,
+        ContentType: "image/jpeg",
+      },
+      queueSize: 4,     // concurrency
+      partSize: 5 * 1024 * 1024, // 5MB per part
+    });
+
+    upload.done()
       .then(async () => {
-        await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
+        await addVideoThumbnail(videoId, thumbnailKey);
         resolve(thumbnailKey);
       })
       .catch(reject);
-
   });
 }
+
 
 async function transcodeResolution(inputStream, s3Key, scale) {
   return new Promise((resolve, reject) => {
