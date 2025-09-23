@@ -1,18 +1,15 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
 import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
-import { s3, uploadToS3 } from "./s3.js";
+import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 
-
-
-
-async function generateThumbnailFromStream(inputStream, videoId) {
-  const thumbnailKey = `thumbnails/${videoId}.jpg`; 
+async function generateThumbnailFromStream(s3Url, videoId) {
+  const thumbnailKey = `thumbnails/${videoId}.jpg`;
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
       "-i",
-      "pipe:0",
+      s3Url, // feed ffmpeg the presigned URL directly
       "-ss",
       "00:00:01",
       "-vframes",
@@ -67,11 +64,8 @@ async function transcodeResolution(inputStream, s3Key, scale) {
 
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
-    const originalStream = await s3
-      .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
-      .then(res => res.Body);
+    const s3Url = await getPresignedUrl(s3KeyOriginal);
 
-    
     // Transcode resolutions
     const resolutions = [
       { name: `${videoId}_360p.mp4`, scale: "640:360" },
@@ -80,7 +74,7 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     ];
 
     // Thumbnail
-    await generateThumbnailFromStream(originalStream, videoId);
+    await generateThumbnailFromStream(s3Url, videoId);
 
     // Videos
     // await Promise.all(resolutions.map(async ({ name, scale }) => {
