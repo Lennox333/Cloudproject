@@ -156,9 +156,9 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     ];
 
     // Thumbnail
-    // await generateThumbnailFromStream(s3Url, videoId);
+    await generateThumbnailFromStream(s3Url, videoId);
 
-    await generateThumbnailLocal(s3Url, videoId);
+    // await generateThumbnailLocal(s3Url, videoId);
 
     // await generateThumbnailMultipart(s3Url, videoId);
     // Videos
