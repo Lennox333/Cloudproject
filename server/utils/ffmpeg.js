@@ -71,7 +71,7 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
       .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
       .then(res => res.Body);
 
-
+    console.log(originalStream)
     // Transcode resolutions
     const resolutions = [
       { name: `${videoId}_360p.mp4`, scale: "640:360" },

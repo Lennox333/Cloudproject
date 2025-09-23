@@ -109,6 +109,4 @@ curl -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/
   -d "{
     \"videoId\": \"$VIDEO_ID\",
     \"s3Key\": \"$S3_KEY\",
-    \"title\": \"$TITLE\",
-    \"description\": \"$DESCRIPTION\"
-  }"
+    \"title\": \"$TITLE\"  }"
