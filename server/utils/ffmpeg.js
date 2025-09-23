@@ -5,40 +5,55 @@ import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
-
+import axios from "axios";
 async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-ss",
-      "00:00:01", // seek first
-      "-i",
-      s3Url, // input video
-      "-frames:v",
-      "1",
-      "-f",
-      "image2",
-      "-update",
-      "1",
-      "-vsync",
-      "0",
-      "pipe:1",
-    ]);
-    const pass = new PassThrough();
-    ffmpeg.stdout.pipe(pass); // ensures ffmpeg stdout is read continuously
-    ffmpeg.on("error", reject);
-    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
-    uploadToS3(pass, thumbnailKey, "image/jpeg")
-      .then(async () => {
-        console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
-        // await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
-        resolve(thumbnailKey);
-      })
-      .catch(reject);
+
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 1️⃣ Download video as a stream
+      const response = await axios.get(s3Url, { responseType: "stream" });
+
+      // 2️⃣ Spawn ffmpeg reading from stdin
+      const ffmpeg = spawn("ffmpeg", [
+        "-ss",
+        "00:00:01", // seek before decoding
+        "-i",
+        "pipe:0", // input from stdin
+        "-frames:v",
+        "1", // capture only 1 frame
+        "-f",
+        "image2",
+        "-update",
+        "1",
+        "-vsync",
+        "0",
+        "pipe:1", // output to stdout
+      ]);
+
+      ffmpeg.stderr.on("data", (data) =>
+        console.error(`[FFmpeg] ${data.toString()}`)
+      );
+      ffmpeg.on("error", (err) => {
+        console.error(`[FFmpeg] Error:`, err);
+        reject(err);
+      });
+
+      // 3️⃣ Pipe the HTTP video stream into ffmpeg
+      response.data.pipe(ffmpeg.stdin);
+
+      // 4️⃣ Pipe ffmpeg stdout to S3 via PassThrough
+      const pass = new PassThrough();
+      ffmpeg.stdout.pipe(pass);
+
+      await uploadToS3(pass, thumbnailKey, "image/jpeg");
+      console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
+      resolve(thumbnailKey);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
-
 async function generateThumbnailMultipart(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 
