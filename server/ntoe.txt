@@ -44,7 +44,7 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
   }'
 
 
-  curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/login \
+  curl -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "ln607090",
