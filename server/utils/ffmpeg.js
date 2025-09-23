@@ -18,6 +18,8 @@ async function generateThumbnailFromStream(s3Url, videoId) {
       const ffmpeg = spawn("ffmpeg", [
         "-ss",
         "00:00:01", // seek before decoding
+        "-f",
+        "mp4", // tell ffmpeg the input format
         "-i",
         "pipe:0", // input from stdin
         "-frames:v",
