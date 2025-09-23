@@ -146,6 +146,24 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
   // once client uploaded they can start the /upload
 });
 
+
+app.get("/get-video-url-test", async (req, res) => {
+  const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: "n11772891-a2",
+      Key: s3Key,
+    });
+
+    const url = await getSignedUrl(s3, command, { expiresIn: 3600 }); // 1 hour
+    res.json({ url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate pre-signed URL" });
+  }
+});
+
 app.post("/start-encode", authenticateToken, async (req, res) => {
   const { videoId, s3Key, title, description } = req.body;
   if (!videoId || !s3Key || !title)
