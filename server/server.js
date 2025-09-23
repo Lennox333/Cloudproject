@@ -18,6 +18,7 @@ import {
   getVideoById,
   saveUserVideo,
 } from "./utils/videos.js";
+import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -299,6 +300,7 @@ app.post("/create-bucket", async (req, res) => {
   if (result.error) return res.status(500).json(result);
   res.status(200).json(result);
 });
+
 
 app.get("/create-user-videos-table", async (req, res) => {
   try {
