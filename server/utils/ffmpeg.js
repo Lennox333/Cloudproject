@@ -77,7 +77,6 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     }
 
     const originalStream = res.Body;
-    console.log("Got stream:", originalStream);
 
     // Transcode resolutions
     const resolutions = [
