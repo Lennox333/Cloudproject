@@ -4,7 +4,7 @@ import {
   DescribeTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import * as DynamoDBLib from "@aws-sdk/lib-dynamodb";
-import { AWS_REGION, DYNAMO_TABLE, USER_KEY, VIDEO_KEY,  } from "./secretManager";
+import { AWS_REGION, DYNAMO_TABLE, USER_KEY, VIDEO_KEY,  } from "./secretManager.js";
 
 
 // DynamoDB clients
