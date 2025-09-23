@@ -61,7 +61,7 @@ async function getVideoById(videoId) {
 
     return {
       videoId: video.video_id,
-      userId: video.video_id,
+      userId: video.user_id,
       title: video.video_title,
       description: video.description || null,
       status: video.status,
@@ -77,9 +77,14 @@ async function getVideoById(videoId) {
 // Add or update video thumbnail
 async function addVideoThumbnail(videoId, thumbnailKey) {
   try {
+    // get user_id from videoId using GSI
+    const video = await getVideoById(videoId);
+    if (!video || !video.userId) return { error: "Video not found" };
+
+    // update using both keys
     const params = {
       TableName: DYNAMO_TABLE,
-      Key: { video_id: videoId },
+      Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET thumbnail_key = :thumbnail",
       ExpressionAttributeValues: { ":thumbnail": thumbnailKey },
     };
@@ -92,12 +97,16 @@ async function addVideoThumbnail(videoId, thumbnailKey) {
   }
 }
 
+
 // Update video status
 async function updateVideoStatus(videoId, status) {
   try {
+    const video = await getVideoById(videoId);
+    if (!video || !video.userId) return { error: "Video not found" };
+
     const params = {
       TableName: DYNAMO_TABLE,
-      Key: { video_id: videoId },
+      Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET #st = :status",
       ExpressionAttributeNames: { "#st": "status" },
       ExpressionAttributeValues: { ":status": status },
