@@ -7,6 +7,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
 import { tmpdir } from "os";
 import { join } from "path";
+import axios from "axios";
 // async function generateThumbnailFromStream(s3Url, videoId) {
 //   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 //   return new Promise((resolve, reject) => {
