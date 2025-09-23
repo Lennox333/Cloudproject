@@ -2,6 +2,10 @@ FROM node:20
 
 WORKDIR /usr/src/app
 
+
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
 # Copy package.json and package-lock.json first for caching
 COPY package*.json ./
 
