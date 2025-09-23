@@ -1,9 +1,16 @@
+// server.js
 import express from "express";
 import cookieParser from "cookie-parser";
 import { randomUUID } from "crypto";
+import cors from "cors";
+
+import { initConfig } from "./utils/secretManager.js"; // NEW
+
+// Initialize secrets & parameters before other imports use them
+await initConfig();
+
 import { authenticateToken } from "./middleware/authentication.js";
 import { transcodeAndUpload } from "./utils/ffmpeg.js";
-import cors from "cors";
 import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
 import {
   isAdmin,

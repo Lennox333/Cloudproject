@@ -1,22 +1,68 @@
+// utils/secretManager.js
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
+let AWS_REGION;
+let BUCKET;
+let PURPOSE;
+let QUT_USERNAME;
+let DYNAMO_TABLE;
+let USER_KEY;
+let VIDEO_KEY;
+let USER_POOL_ID;
+let COGNITO_CLIENT_ID;
+let COGNITO_CLIENT_SECRET;
 
-export const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
-export const BUCKET = process.env.S3_BUCKET || "n11772891-a2";
-export const QUT_USERNAME = process.env.QUT_USERNAME || "n11772891";
-export const PURPOSE = process.env.PURPOSE || "assignment";
+export async function initConfig() {
+  AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
 
-export const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || "ap-southeast-2_UHY8axAL5";
+  const ssmClient = new SSMClient({ region: AWS_REGION });
+  const secretsClient = new SecretsManagerClient({ region: AWS_REGION });
 
+  async function getParam(name) {
+    const cmd = new GetParameterCommand({ Name: name, WithDecryption: false });
+    const res = await ssmClient.send(cmd);
+    return res.Parameter.Value;
+  }
 
-export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
-export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
+  try {
+    // ---- Load from SSM ----
+    AWS_REGION = await getParam("/n11772891/aws_region");
+    PURPOSE = await getParam("/n11772891/purpose");
+    QUT_USERNAME = await getParam("/n11772891/qut_username");
+    BUCKET = await getParam("/n11772891/s3_bucket");
+    USER_POOL_ID = await getParam("/n11772891/user_pool_id");
 
-export const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID ||  "2pa4s4qiiseqdidl83vd2cnnq4";
+    // ---- Load Cognito secrets ----
+    const secretRes = await secretsClient.send(
+      new GetSecretValueCommand({ SecretId: "n11772891-cognito-secrets" })
+    );
+    const secretJson = JSON.parse(secretRes.SecretString);
 
-export const COGNITO_CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET ||  "1gvvu02cb8ua5r924lgs9c1sk9guvdj1cf5crldurb4ks8iqg072";
+    COGNITO_CLIENT_ID = secretJson.COGNITO_CLIENT_ID;
+    COGNITO_CLIENT_SECRET = secretJson.COGNITO_CLIENT_SECRET;
 
+    // ---- Derived ----
+    DYNAMO_TABLE = `${QUT_USERNAME}-user_videos`;
+    USER_KEY = `${QUT_USERNAME}-user_id`;
+    VIDEO_KEY = `${QUT_USERNAME}-video_id`;
 
-// Table and key constants
-export const DYNAMO_TABLE = `${QUT_USERNAME}-user_videos`;
-export const USER_KEY = `${QUT_USERNAME}-user_id`; // Partition key
-export const VIDEO_KEY = `${QUT_USERNAME}-video_id`; // Sort key
+    console.log("✅ Config and secrets loaded successfully");
+  } catch (err) {
+    console.error("❌ Failed to initialize config:", err);
+    throw err;
+  }
+}
+
+export {
+  AWS_REGION,
+  BUCKET,
+  PURPOSE,
+  QUT_USERNAME,
+  USER_POOL_ID,
+  DYNAMO_TABLE,
+  USER_KEY,
+  VIDEO_KEY,
+  COGNITO_CLIENT_ID,
+  COGNITO_CLIENT_SECRET,
+};

@@ -1,4 +1,4 @@
-import fs from "fs";
+// utils/s3.js
 import {
   S3Client,
   PutObjectCommand,
@@ -8,21 +8,14 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
-import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
-import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
+import {
+  AWS_REGION,
+  BUCKET,
+  PURPOSE,
+  QUT_USERNAME,
+} from "./secretManager.js";
 
-// const s3 = new S3Client({
-//   region: AWS_REGION,
-//   credentials: fromCognitoIdentityPool({
-//     client: new CognitoIdentityClient({ region: AWS_REGION }),
-//     identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID,
-//   }),
-// });
-
-export const s3 = new S3Client({
-  region: AWS_REGION,
-});
+export const s3 = new S3Client({ region: AWS_REGION });
 
 // Create / Tag Bucket
 async function createIfNotExist() {
@@ -37,11 +30,8 @@ async function createIfNotExist() {
   });
 
   try {
-    // Check bucket exists
     await s3.send(new HeadBucketCommand({ Bucket: BUCKET }));
     console.log(`Bucket "${BUCKET}" exists.`);
-
-    // Apply tags
     const response = await s3.send(tagCommand);
     console.log("Bucket tagged:", response);
     return { success: true };
