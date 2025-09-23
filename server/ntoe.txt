@@ -72,8 +72,6 @@ curl -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/
   -H "Authorization: Bearer $TOKEN" \
   -d '{"filename":"example.mp4","title":"Test Upload"}'
 
-
-# Assuming TOKEN already contains your accessToken
 RESPONSE=$(curl -s -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/get-upload-url \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -87,3 +85,20 @@ UPLOAD_URL=$(echo $RESPONSE | jq -r '.uploadUrl')
 curl -X PUT "$UPLOAD_URL" \
   -T "/home/ln607/Videos/recording_2025-07-24_20-09-43.mp4" \
   -H "Content-Type: video/mp4"
+
+
+VIDEO_ID="281e7b85-3b28-43e0-8714-4e5ce05a0b9a"
+S3_KEY="videos/281e7b85-3b28-43e0-8714-4e5ce05a0b9a-example.mp4"
+TITLE="Test Video"
+DESCRIPTION="Optional description"
+
+
+curl -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/start-encode \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d "{
+    \"videoId\": \"$VIDEO_ID\",
+    \"s3Key\": \"$S3_KEY\",
+    \"title\": \"$TITLE\",
+    \"description\": \"$DESCRIPTION\"
+  }"

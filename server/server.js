@@ -147,17 +147,17 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
 });
 
 
-app.get("/get-video-url-test", async (req, res) => {
-  const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
+// app.get("/get-video-url-test", async (req, res) => {
+//   const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
 
-  try {
-    const url = await getPresignedUrl(s3Key, 3600, "getObject"); // generate download URL
-    res.json({ url });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to generate pre-signed URL" });
-  }
-});
+//   try {
+//     const url = await getPresignedUrl(s3Key, 3600, "getObject"); // generate download URL
+//     res.json({ url });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Failed to generate pre-signed URL" });
+//   }
+// });
 
 
 app.post("/start-encode", authenticateToken, async (req, res) => {
@@ -299,6 +299,17 @@ app.post("/create-bucket", async (req, res) => {
   if (result.error) return res.status(500).json(result);
   res.status(200).json(result);
 });
+
+app.get("/create-user-videos-table", async (req, res) => {
+  try {
+    await ensureUserVideosTable();
+    res.status(200).json({ message: `Table user_videos ensured` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to ensure table" });
+  }
+});
+
 
 //##### ENDPOINTS ####
 
