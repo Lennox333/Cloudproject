@@ -111,7 +111,7 @@ async function generateThumbnailMultipart(s3Url, videoId) {
     upload
       .done()
       .then(async () => {
-        await addVideoThumbnail(videoId, thumbnailKey);
+        // await addVideoThumbnail(videoId, thumbnailKey);
         resolve(thumbnailKey);
       })
       .catch(reject);
@@ -194,11 +194,11 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     ];
 
     // Thumbnail
-    await generateThumbnailFromStream(s3Url, videoId);
+    // await generateThumbnailFromStream(s3Url, videoId);
 
     // await generateThumbnailLocal(s3Url, videoId);
 
-    // await generateThumbnailMultipart(s3Url, videoId);
+    await generateThumbnailMultipart(s3Url, videoId);
     // Videos
     // await Promise.all(resolutions.map(async ({ name, scale }) => {
     //   const stream = await s3
