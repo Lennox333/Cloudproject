@@ -4,8 +4,11 @@ import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
 import { s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 
+
+
+
 async function generateThumbnailFromStream(inputStream, videoId) {
-  const thumbnailKey = `thumbnails/${videoId}.jpg`;
+  const thumbnailKey = `thumbnails/${videoId}.jpg`; 
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
       "-i",
@@ -64,20 +67,11 @@ async function transcodeResolution(inputStream, s3Key, scale) {
 
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
-    const res = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET,
-        Key: s3KeyOriginal,
-      })
-    );
+    const originalStream = await s3
+      .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
+      .then(res => res.Body);
 
-    if (!res.Body) {
-      console.error("S3 object body is empty or undefined!");
-      return;
-    }
-
-    const originalStream = res.Body;
-
+    
     // Transcode resolutions
     const resolutions = [
       { name: `${videoId}_360p.mp4`, scale: "640:360" },
@@ -89,16 +83,14 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     await generateThumbnailFromStream(originalStream, videoId);
 
     // Videos
-    await Promise.all(
-      resolutions.map(async ({ name, scale }) => {
-        const stream = await s3
-          .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
-          .then((res) => res.Body);
-        return transcodeResolution(stream, `videos/${name}`, scale);
-      })
-    );
+    // await Promise.all(resolutions.map(async ({ name, scale }) => {
+    //   const stream = await s3
+    //     .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
+    //     .then(res => res.Body);
+    //   return transcodeResolution(stream, `videos/${name}`, scale);
+    // }));
 
-    await updateVideoStatus(videoId, "processed");
+    // await updateVideoStatus(videoId, "processed");
     console.log(`Video ${videoId} processed successfully`);
   } catch (err) {
     console.error("Transcoding failed for videoId:", videoId, err);
