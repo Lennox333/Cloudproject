@@ -185,6 +185,20 @@ app.post("/start-encode", authenticateToken, async (req, res) => {
   transcodeAndUpload(videoId, s3Key); // async background task
 });
 
+app.post("/transcodetest", async (req, res) => {
+  const { videoId, s3Key, title, description } = req.body;
+  if (!videoId || !s3Key || !title)
+    return res.status(400).json({ error: "Missing data" });
+
+  res.status(200).json({
+    message: "Upload confirmed, transcoding started",
+    videoId,
+  });
+
+  transcodeAndUpload(videoId, s3Key); // async background task
+});
+
+
 app.get("/thumbnails/:videoId", async (req, res) => {
   const { videoId } = req.params;
 
