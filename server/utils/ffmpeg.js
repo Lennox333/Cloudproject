@@ -10,19 +10,19 @@ async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
+      "-ss",
+      "00:00:01", // seek first
       "-i",
       s3Url, // input video
-      "-ss",
-      "00:00:01", // seek to 1 second
       "-frames:v",
-      "1", // capture only 1 frame
+      "1",
       "-f",
-      "image2", // image format
+      "image2",
       "-update",
-      "1", // IMPORTANT: allows single image to pipe
+      "1",
       "-vsync",
-      "0", // optional: avoid framerate warnings
-      "pipe:1", // output to stdout
+      "0",
+      "pipe:1",
     ]);
     const pass = new PassThrough();
     ffmpeg.stdout.pipe(pass); // ensures ffmpeg stdout is read continuously
