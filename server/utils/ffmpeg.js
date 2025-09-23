@@ -9,17 +9,12 @@ async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      s3Url, // input video
-      "-ss",
-      "00:00:01", // seek to 1 second
-      "-vframes",
-      "1", // only 1 frame
-      "-f",
-      "image2", // format
-      "-update",
-      "1", // required for single image to pipe
-      "pipe:1", // stdout
+      "-i", s3Url,        // input video
+      "-ss", "00:00:01",  // seek to 1 second
+      "-frames:v", "1",   // capture only 1 frame
+      "-f", "image2",     // image format
+      "-vsync", "0",      // prevent weird frame duplication warning
+      "pipe:1",           // output to stdout
     ]);
 
     ffmpeg.on("error", reject);
@@ -27,7 +22,7 @@ async function generateThumbnailFromStream(s3Url, videoId) {
 
     uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
       .then(async () => {
-        await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
+        // await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
         resolve(thumbnailKey);
       })
       .catch(reject);
