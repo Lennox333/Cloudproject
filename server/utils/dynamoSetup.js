@@ -4,7 +4,7 @@ import {
   DescribeTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import * as DynamoDBLib from "@aws-sdk/lib-dynamodb";
-import { AWS_REGION, DYNAMO_TABLE, USER_KEY, VIDEO_KEY,  } from "./secretManager.js";
+import { AWS_REGION, DYNAMO_TABLE } from "./secretManager.js";
 
 
 // DynamoDB clients
@@ -24,18 +24,18 @@ export async function ensureUserVideosTable() {
       const createCmd = new CreateTableCommand({
         TableName: DYNAMO_TABLE,
         AttributeDefinitions: [
-          { AttributeName: USER_KEY, AttributeType: "S" },
-          { AttributeName: VIDEO_KEY, AttributeType: "S" },
+          { AttributeName: "user_id", AttributeType: "S" },
+          { AttributeName: "video_id", AttributeType: "S" },
         ],
         KeySchema: [
-          { AttributeName: USER_KEY, KeyType: "HASH" },
-          { AttributeName: VIDEO_KEY, KeyType: "RANGE" },
+          { AttributeName: "user_id", KeyType: "HASH" },
+          { AttributeName: "video_id", KeyType: "RANGE" },
         ],
         BillingMode: "PAY_PER_REQUEST",
         GlobalSecondaryIndexes: [
           {
             IndexName: "VideoIdIndex",
-            KeySchema: [{ AttributeName: VIDEO_KEY, KeyType: "HASH" }],
+            KeySchema: [{ AttributeName: "video_id", KeyType: "HASH" }],
             Projection: { ProjectionType: "ALL" },
           },
         ],
