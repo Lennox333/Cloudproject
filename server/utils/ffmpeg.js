@@ -4,6 +4,7 @@ import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
 import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
+import { PassThrough } from "stream";
 
 async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
@@ -23,11 +24,12 @@ async function generateThumbnailFromStream(s3Url, videoId) {
       "0", // optional: avoid framerate warnings
       "pipe:1", // output to stdout
     ]);
-
+    const pass = new PassThrough();
+    ffmpeg.stdout.pipe(pass); // ensures ffmpeg stdout is read continuously
     ffmpeg.on("error", reject);
     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-
-    uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
+    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
+    uploadToS3(pass, thumbnailKey, "image/jpeg")
       .then(async () => {
         console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
         // await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
