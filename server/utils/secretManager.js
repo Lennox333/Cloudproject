@@ -1,7 +1,7 @@
 
 
 export const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
-export const BUCKET = process.env.S3_BUCKET;
+export const BUCKET = process.env.S3_BUCKET || "n11772891-a2";
 export const QUT_USERNAME = process.env.QUT_USERNAME || "n11772891";
 export const PURPOSE = process.env.PURPOSE || "assignment";
 

@@ -50,3 +50,19 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
     "username": "ln607090",
     "password": "TestPassword123!"
   }'
+
+
+
+ curl -s -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ln607090",
+    "password": "TestPassword123!"
+  }' | jq -r '.accessToken'
+
+
+  TOKEN=$(curl -s -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ln607090","password":"TestPassword123!"}' | jq -r '.accessToken')
+
+echo $TOKEN
