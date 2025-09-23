@@ -39,8 +39,6 @@ import { PassThrough } from "stream";
 //   });
 // }
 
-
-
 async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   const tmpFile = join(tmpdir(), `${videoId}.mp4`);
@@ -49,16 +47,24 @@ async function generateThumbnailFromStream(s3Url, videoId) {
   const writer = fs.createWriteStream(tmpFile);
   const response = await axios.get(s3Url, { responseType: "stream" });
   response.data.pipe(writer);
-  await new Promise((resolve, reject) => writer.on("finish", resolve).on("error", reject));
+  await new Promise((resolve, reject) =>
+    writer.on("finish", resolve).on("error", reject)
+  );
 
   // 2️⃣ Spawn ffmpeg on local file
   const ffmpeg = spawn("ffmpeg", [
-    "-ss", "00:00:01",  // seek first
-    "-i", tmpFile,       // local file
-    "-frames:v", "1",    // single frame
-    "-f", "image2",
-    "-update", "1",
-    "-vsync", "0",
+    "-ss",
+    "00:00:01", // seek first
+    "-i",
+    tmpFile, // local file
+    "-frames:v",
+    "1", // single frame
+    "-f",
+    "image2",
+    "-update",
+    "1",
+    "-vsync",
+    "0",
     "pipe:1",
   ]);
 
@@ -89,6 +95,9 @@ async function generateThumbnailMultipart(s3Url, videoId) {
       "1", // Only one frame
       "-f",
       "image2",
+      "-update",
+      "1",
+
       "pipe:1", // Output to stdout
     ]);
 
