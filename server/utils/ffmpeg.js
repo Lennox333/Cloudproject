@@ -29,6 +29,7 @@ async function generateThumbnailFromStream(s3Url, videoId) {
 
     uploadToS3(ffmpeg.stdout, thumbnailKey, "image/jpeg")
       .then(async () => {
+        console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
         // await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
         resolve(thumbnailKey);
       })
