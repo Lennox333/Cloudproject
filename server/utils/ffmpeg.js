@@ -5,57 +5,76 @@ import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
-import axios from "axios";
+
+// async function generateThumbnailFromStream(s3Url, videoId) {
+//   const thumbnailKey = `thumbnails/${videoId}.jpg`;
+//   return new Promise((resolve, reject) => {
+//     const ffmpeg = spawn("ffmpeg", [
+//       "-i",
+//       s3Url, // input video
+//       "-ss",
+//       "00:00:01", // seek to 1 second
+//       "-frames:v",
+//       "1", // capture only 1 frame
+//       "-f",
+//       "image2", // image format
+//       "-update",
+//       "1", // IMPORTANT: allows single image to pipe
+//       "-vsync",
+//       "0", // optional: avoid framerate warnings
+//       "pipe:1", // output to stdout
+//     ]);
+//     const pass = new PassThrough();
+//     ffmpeg.stdout.pipe(pass); // ensures ffmpeg stdout is read continuously
+//     ffmpeg.on("error", reject);
+//     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
+//     console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
+//     uploadToS3(a, thumbnailKey, "image/jpeg")
+//       .then(async () => {
+//         console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
+//         // await addVideoThumbnail(videoId, thumbnailKey); // add thumbnailkey later to ensure thumbnail exist before referencing it
+//         resolve(thumbnailKey);
+//       })
+//       .catch(reject);
+//   });
+// }
+
+
+
 async function generateThumbnailFromStream(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
+  const tmpFile = join(tmpdir(), `${videoId}.mp4`);
 
-  return new Promise(async (resolve, reject) => {
-    try {
-      // 1️⃣ Download video as a stream
-      const response = await axios.get(s3Url, { responseType: "stream" });
+  // 1️⃣ Download video
+  const writer = fs.createWriteStream(tmpFile);
+  const response = await axios.get(s3Url, { responseType: "stream" });
+  response.data.pipe(writer);
+  await new Promise((resolve, reject) => writer.on("finish", resolve).on("error", reject));
 
-      // 2️⃣ Spawn ffmpeg reading from stdin
-      const ffmpeg = spawn("ffmpeg", [
-        "-ss",
-        "00:00:01", // seek before decoding
-        "-f",
-        "mp4", // tell ffmpeg the input format
-        "-i",
-        "pipe:0", // input from stdin
-        "-frames:v",
-        "1", // capture only 1 frame
-        "-f",
-        "image2",
-        "-update",
-        "1",
-        "-vsync",
-        "0",
-        "pipe:1", // output to stdout
-      ]);
+  // 2️⃣ Spawn ffmpeg on local file
+  const ffmpeg = spawn("ffmpeg", [
+    "-ss", "00:00:01",  // seek first
+    "-i", tmpFile,       // local file
+    "-frames:v", "1",    // single frame
+    "-f", "image2",
+    "-update", "1",
+    "-vsync", "0",
+    "pipe:1",
+  ]);
 
-      ffmpeg.stderr.on("data", (data) =>
-        console.error(`[FFmpeg] ${data.toString()}`)
-      );
-      ffmpeg.on("error", (err) => {
-        console.error(`[FFmpeg] Error:`, err);
-        reject(err);
-      });
+  const pass = new PassThrough();
+  ffmpeg.stdout.pipe(pass);
+  ffmpeg.stderr.on("data", (d) => console.error(`[FFmpeg] ${d.toString()}`));
+  ffmpeg.on("error", (err) => console.error(`[FFmpeg] Error: ${err}`));
 
-      // 3️⃣ Pipe the HTTP video stream into ffmpeg
-      response.data.pipe(ffmpeg.stdin);
+  // 3️⃣ Upload thumbnail to S3
+  await uploadToS3(pass, thumbnailKey, "image/jpeg");
+  console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
 
-      // 4️⃣ Pipe ffmpeg stdout to S3 via PassThrough
-      const pass = new PassThrough();
-      ffmpeg.stdout.pipe(pass);
-
-      await uploadToS3(pass, thumbnailKey, "image/jpeg");
-      console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
-      resolve(thumbnailKey);
-    } catch (err) {
-      reject(err);
-    }
-  });
+  fs.unlinkSync(tmpFile); // cleanup
+  return thumbnailKey;
 }
+
 async function generateThumbnailMultipart(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 
