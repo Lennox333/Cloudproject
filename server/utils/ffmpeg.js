@@ -157,6 +157,10 @@ async function transcodeVideo(s3Url, videoId, scale) {
   return new Promise((resolve, reject) => {
     ffmpeg.stdout.pipe(pass);
 
+    // ffmpeg.stderr.on("data", (data) => {
+    //   console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
+    // });
+
     ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
 
     ffmpeg.on("close", (code) => {
@@ -173,24 +177,39 @@ async function transcodeVideo(s3Url, videoId, scale) {
   });
 }
 
+async function transcodeAllResolutions(s3Url, videoId) {
+  const resolutions = [
+    { name: `${videoId}_360p.mp4`, scale: "640:360" },
+    { name: `${videoId}_480p.mp4`, scale: "854:480" },
+    { name: `${videoId}_720p.mp4`, scale: "1280:720" },
+  ];
+
+  // map each resolution to a transcodeVideo promise
+  const transcodePromises = resolutions.map((r) =>
+    transcodeVideo(s3Url, videoId, r.scale)
+  );
+
+  try {
+    // wait for all to complete
+    const results = await Promise.all(transcodePromises);
+    console.log(`[Transcode] All resolutions uploaded successfully:`, results);
+    return results; // array of S3 keys
+  } catch (err) {
+    console.error(`[Transcode] Error in one of the resolutions:`, err);
+    throw err;
+  }
+}
+
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
-
-    // Transcode resolutions
-    const resolutions = [
-      { name: `${videoId}_360p.mp4`, scale: "640:360" },
-      { name: `${videoId}_480p.mp4`, scale: "854:480" },
-      { name: `${videoId}_720p.mp4`, scale: "1280:720" },
-    ];
 
     // Thumbnail
     await generateThumbnail(s3Url, videoId);
 
     // Videos
 
-    // await updateVideoStatus(videoId, "processed");
-    console.log(`[Video] ${videoId} processed successfully`);
+    await transcodeAllResolutions(s3Url, videoId);
   } catch (err) {
     console.error("[Video] Transcoding failed for videoId:", videoId, err);
     await updateVideoStatus(videoId, "failed");
