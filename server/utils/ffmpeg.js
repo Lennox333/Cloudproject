@@ -3,6 +3,8 @@ import { updateVideoStatus } from "./videos.js";
 import { getPresignedUrl, uploadToS3Multipart } from "./s3.js";
 import { PassThrough } from "stream";
 
+// credit : https://www.freecodecamp.org/news/upload-large-files-with-aws/
+
 // async function generateThumbnailFromStream(s3Url, videoId) {
 //   const thumbnailKey = `thumbnails/${videoId}.jpg`;
 //   return new Promise((resolve, reject) => {
@@ -137,12 +139,16 @@ async function transcodeVideo(s3Url, s3Key, scale) {
       "libx264",
       "-crf",
       "23",
+      "-r",
+      "30",
       "-preset",
       "medium",
       "-c:a",
       "aac",
+      "-movflags",
+      "frag_keyframe+empty_moov",
       "-f",
-      "mpegts",
+      "mp4",
       "pipe:1",
     ],
     {
@@ -175,9 +181,9 @@ async function transcodeVideo(s3Url, s3Key, scale) {
 
 async function transcodeAllResolutions(s3Url, videoId) {
   const resolutions = [
-    // { name: `${videoId}_360p.ts`, scale: "640:360" },
-    // { name: `${videoId}_480p.ts`, scale: "854:480" },
-    { name: `${videoId}_720p.ts`, scale: "1280:720" },
+    { name: `${videoId}_360p.mp4`, scale: "640:360" },
+    { name: `${videoId}_480p.mp4`, scale: "854:480" },
+    { name: `${videoId}_720p.mp4`, scale: "1280:720" },
   ];
 
   // map each resolution to a transcodeVideo promise
@@ -201,13 +207,14 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
 
     console.log(s3Url);
-    // Thumbnail
-    await generateThumbnail(s3Url, videoId);
+    const thumbnailPromise = generateThumbnail(s3Url, videoId);
+    const videoPromise = transcodeAllResolutions(s3Url, videoId);
 
-    // Videos
-    await transcodeAllResolutions(s3Url, videoId);
+    // Wait for all tasks to complete
+    await Promise.all([thumbnailPromise, videoPromise]);
 
     await updateVideoStatus(videoId, "processed");
+    console.log(`[Video] All processing done for videoId: ${videoId}`);
   } catch (err) {
     console.error("[Video] Transcoding failed for videoId:", videoId, err);
     await updateVideoStatus(videoId, "failed");

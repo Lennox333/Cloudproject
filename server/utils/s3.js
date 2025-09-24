@@ -102,9 +102,9 @@ async function uploadToS3Multipart(body, key, contentType) {
 async function deleteVideoFiles(videoId) {
   try {
     const keysToDelete = [
-      `videos/${videoId}_360p.ts`,
-      `videos/${videoId}_480p.ts`,
-      `videos/${videoId}_720p.ts`,
+      `videos/${videoId}_360p.mp4`,
+      `videos/${videoId}_480p.mp4`,
+      `videos/${videoId}_720p.mp4`,
       `thumbnails/${videoId}.jpg/`
     ];
 
