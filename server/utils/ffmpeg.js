@@ -5,7 +5,6 @@ import { getPresignedUrl, s3, uploadToS3, uploadToS3Multipart } from "./s3.js";
 
 import { PassThrough } from "stream";
 
-
 // credit : https://www.freecodecamp.org/news/upload-large-files-with-aws/
 
 // async function generateThumbnailFromStream(s3Url, videoId) {
@@ -142,11 +141,14 @@ async function transcodeVideo(s3Url, s3Key, scale) {
       "libx264",
       "-crf",
       "23",
+      "-r",
+      "30",
       "-preset",
       "medium",
       "-c:a",
       "aac",
-      "-movflags", "frag_keyframe+empty_moov",
+      "-movflags",
+      "frag_keyframe+empty_moov",
       "-f",
       "mp4",
       "pipe:1",
