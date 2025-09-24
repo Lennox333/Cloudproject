@@ -1,7 +1,7 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
 import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
-import { getPresignedUrl, s3, uploadToS3 } from "./s3.js";
+import { getPresignedUrl, s3, uploadToS3, uploadToS3Multipart } from "./s3.js";
 import { BUCKET } from "./secretManager.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
@@ -89,45 +89,41 @@ async function generateThumbnailFromStream(s3Url, videoId) {
 
 async function generateThumbnailMultipart(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
+  const pass = new PassThrough();
 
   return new Promise((resolve, reject) => {
-    // Spawn ffmpeg to grab a single frame at 1s
-    const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      s3Url, // Input video URL
-      "-ss",
-      "00:00:01", // Seek to 1 second
-      "-vframes",
-      "1", // Only one frame
-      "-f",
-      "image2",
-      "-update",
-      "1",
-
-      "pipe:1", // Output to stdout
-    ]);
-    const pass = new PassThrough();
+    const ffmpeg = spawn(
+      "ffmpeg",
+      [
+        "-i",
+        s3Url,
+        "-ss",
+        "00:00:01",
+        "-vframes",
+        "1",
+        "-f",
+        "image2",
+        "-update",
+        "1",
+        "pipe:1",
+      ],
+      {
+        stdio: ["ignore", "pipe", "ignore"], // suppress stdout logging; keep stdout as pipe
+      }
+    );
     ffmpeg.stdout.pipe(pass);
+
     ffmpeg.on("error", reject);
-    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
-    // Multipart upload via AWS SDK v3
-    const upload = new Upload({
-      client: s3,
-      params: {
-        Bucket: BUCKET,
-        Key: thumbnailKey,
-        Body: pass,
-        ContentType: "image/jpeg",
-      },
-      queueSize: 4, // concurrency
-      partSize: 5 * 1024 * 1024, // 5MB per part
+    ffmpeg.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`FFmpeg exited with code ${code}`));
+      }
     });
 
-    upload
-      .done()
+    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
+    uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
       .then(async () => {
-        // await addVideoThumbnail(videoId, thumbnailKey);
+        await addVideoThumbnail(videoId, thumbnailKey); // Optional DB update
         console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
         resolve(thumbnailKey);
       })

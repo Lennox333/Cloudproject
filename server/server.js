@@ -127,7 +127,7 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
     return res.status(400).json({ error: "Filename and title required" });
 
   const videoId = randomUUID();
-  const s3Key = `videos/${videoId}-${filename}`;
+  const s3Key = `videos/${videoId}`;
 
   try {
     const uploadUrl = await getPresignedUrl(s3Key, 3600, "putObject");

@@ -82,6 +82,22 @@ async function uploadToS3(buffer, key, contentType) {
   );
 }
 
+async function uploadToS3Multipart(body, key, contentType) {
+  const upload = new Upload({
+    client: s3,
+    params: {
+      Bucket: BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    },
+    queueSize: 4, // concurrency
+    partSize: 5 * 1024 * 1024, // 5MB per part
+  });
+
+  return upload.done();
+}
+
 // Delete video files (all resolutions + thumbnail)
 async function deleteVideoFiles(video) {
   try {
@@ -104,4 +120,4 @@ async function deleteVideoFiles(video) {
   }
 }
 
-export { getPresignedUrl, uploadToS3, createIfNotExist, deleteVideoFiles };
+export { getPresignedUrl, uploadToS3, uploadToS3Multipart, createIfNotExist, deleteVideoFiles };
