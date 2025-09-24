@@ -190,15 +190,15 @@ async function deleteUserVideo(videoId) {
 }
 
 // Delete video from Dynamo and associated S3 files
-async function deleteVideo(video) {
+async function deleteVideo(videoId) {
   try {
-    const dbResult = await deleteUserVideo(video.videoId);
+    const dbResult = await deleteUserVideo(videoId);
     if (dbResult.error)
       return { success: false, error: "Failed to delete video from database" };
 
-    await deleteVideoFiles(video);
+    await deleteVideoFiles(videoId);
 
-    console.log("Deleted video:", video.videoId);
+    console.log("Deleted video:", videoId);
     return { success: true };
   } catch (err) {
     console.error("DynamoDB deleteVideo error:", err);

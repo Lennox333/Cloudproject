@@ -100,14 +100,14 @@ async function uploadToS3Multipart(body, key, contentType) {
 }
 
 // Delete video files (all resolutions + thumbnail)
-async function deleteVideoFiles(video) {
+async function deleteVideoFiles(videoId) {
   try {
     const keysToDelete = [
-      `videos/${video.videoId}_360p.mp4`,
-      `videos/${video.videoId}_480p.mp4`,
-      `videos/${video.videoId}_720p.mp4`,
+      `videos/${videoId}_360p.ts`,
+      `videos/${videoId}_480p.ts`,
+      `videos/${videoId}_720p.ts`,
+      `thumbnails/${videoId}.jpg/`
     ];
-    if (video.thumbnailKey) keysToDelete.push(video.thumbnailKey);
 
     for (const key of keysToDelete) {
       await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));

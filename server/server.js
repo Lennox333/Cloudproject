@@ -290,7 +290,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
       }
     }
 
-    const result = await deleteVideo(video);
+    const result = await deleteVideo(video.videoId);
     if (result.error) return res.status(500).json({ error: result.error });
 
     res
