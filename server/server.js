@@ -147,7 +147,6 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
   // once client uploaded they can start the /upload
 });
 
-
 // app.get("/get-video-url-test", async (req, res) => {
 //   const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
 
@@ -159,7 +158,6 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
 //     res.status(500).json({ error: "Failed to generate pre-signed URL" });
 //   }
 // });
-
 
 app.post("/start-encode", authenticateToken, async (req, res) => {
   const { videoId, s3Key, title, description } = req.body;
@@ -198,7 +196,6 @@ app.post("/transcodetest", async (req, res) => {
   transcodeAndUpload(videoId, s3Key); // async background task
 });
 
-
 app.get("/thumbnails/:videoId", async (req, res) => {
   const { videoId } = req.params;
 
@@ -206,15 +203,11 @@ app.get("/thumbnails/:videoId", async (req, res) => {
   if (video.error) return res.status(404).json({ error: video.error });
 
   // Only allow access if processed
-  if (video.status !== "processed" || !video.thumbnailKey) {
+  if (video.status !== "processed") {
     return res.status(400).json({ error: "Thumbnail not available" });
   }
-
-  const thumbnailUrl = await getPresignedUrl(
-    video.thumbnailKey,
-    3600,
-    "getObject"
-  );
+  const thumbnailKey = `thumbnails/${videoId}.jpg`;
+  const thumbnailUrl = await getPresignedUrl(thumbnailKey, 3600, "getObject");
   res.status(200).json({ thumbnailUrl });
 });
 
@@ -315,7 +308,6 @@ app.post("/create-bucket", async (req, res) => {
   res.status(200).json(result);
 });
 
-
 app.get("/create-user-videos-table", async (req, res) => {
   try {
     await ensureUserVideosTable();
@@ -326,9 +318,8 @@ app.get("/create-user-videos-table", async (req, res) => {
   }
 });
 
-
 //##### ENDPOINTS ####
 
-app.listen(PORT, "0.0.0.0",() => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
