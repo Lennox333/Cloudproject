@@ -109,10 +109,6 @@ async function generateThumbnail(s3Url, videoId) {
   return new Promise((resolve, reject) => {
     ffmpeg.stdout.pipe(pass);
 
-    ffmpeg.stderr.on("data", (data) => {
-      console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
-    });
-
     ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
     ffmpeg.on("close", (code) => {
       if (code !== 0) {
@@ -160,10 +156,6 @@ async function transcodeVideo(s3Url, videoId, scale) {
 
   return new Promise((resolve, reject) => {
     ffmpeg.stdout.pipe(pass);
-
-    ffmpeg.stderr.on("data", (data) => {
-      console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
-    });
 
     ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
 
