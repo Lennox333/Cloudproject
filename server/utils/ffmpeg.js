@@ -146,6 +146,7 @@ async function transcodeVideo(s3Url, s3Key, scale) {
       "medium",
       "-c:a",
       "aac",
+      "-movflags", "frag_keyframe+empty_moov",
       "-f",
       "mp4",
       "pipe:1",
