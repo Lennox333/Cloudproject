@@ -155,9 +155,9 @@ async function transcodeVideo(s3Url, s3Key, scale) {
   return new Promise((resolve, reject) => {
     ffmpeg.stdout.pipe(pass);
 
-    // ffmpeg.stderr.on("data", (data) => {
-    //   console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
-    // });
+    ffmpeg.stderr.on("data", (data) => {
+      console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
+    });
 
     ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
 
@@ -202,6 +202,7 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
 
+    console.log(s3Url)
     // Thumbnail
     await generateThumbnail(s3Url, videoId);
 
