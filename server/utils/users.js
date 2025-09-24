@@ -1,4 +1,3 @@
-// users.js
 import {
   GlobalSignOutCommand,
   SignUpCommand,
@@ -10,9 +9,10 @@ import { config } from "./secretManager.js"; // Import the config object
 import { cognitoClient } from "./cognitoClient.js";
 import { createHmac } from "crypto";
 
+const {COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID}  = config
 function calculateSecretHash(username) {
-  const message = username + config.COGNITO_CLIENT_ID;
-  const hmac = createHmac("sha256", config.COGNITO_CLIENT_SECRET);
+  const message = username + COGNITO_CLIENT_ID;
+  const hmac = createHmac("sha256", COGNITO_CLIENT_SECRET);
   hmac.update(message);
   return hmac.digest("base64");
 }
@@ -21,7 +21,7 @@ async function registerUser(username, password, email) {
   try {
     const secretHash = calculateSecretHash(username);
     const command = new SignUpCommand({
-      ClientId: config.COGNITO_CLIENT_ID,
+      ClientId: COGNITO_CLIENT_ID,
       SecretHash: secretHash,
       Username: username,
       Password: password,
@@ -39,7 +39,7 @@ async function loginUser(username, password) {
   const secretHash = calculateSecretHash(username);
   const command = new InitiateAuthCommand({
     AuthFlow: "USER_PASSWORD_AUTH",
-    ClientId: config.COGNITO_CLIENT_ID,
+    ClientId: COGNITO_CLIENT_ID,
     AuthParameters: {
       USERNAME: username,
       PASSWORD: password,
@@ -69,7 +69,7 @@ async function logoutUser(accessToken) {
 async function isAdmin(user) {
   try {
     const command = new AdminListGroupsForUserCommand({
-      UserPoolId: config.USER_POOL_ID,
+      UserPoolId: USER_POOL_ID,
       Username: user.username,
     });
     const response = await cognitoClient.send(command);
@@ -89,7 +89,7 @@ async function confirmRegistration(username, confirmationCode) {
   try {
     const secretHash = calculateSecretHash(username);
     const command = new ConfirmSignUpCommand({
-      ClientId: config.COGNITO_CLIENT_ID,
+      ClientId: COGNITO_CLIENT_ID,
       SecretHash: secretHash,
       Username: username,
       ConfirmationCode: confirmationCode,

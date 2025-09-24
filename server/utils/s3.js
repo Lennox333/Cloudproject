@@ -1,4 +1,3 @@
-import fs from "fs";
 import {
   S3Client,
   PutObjectCommand,

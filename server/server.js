@@ -1,4 +1,3 @@
-// server.js
 import { initConfig } from "./utils/secretManager.js";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -152,17 +151,6 @@ app.post("/get-upload-url", authenticateToken, async (req, res) => {
   // once client uploaded they can start the /upload
 });
 
-// app.get("/get-video-url-test", async (req, res) => {
-//   const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
-
-//   try {
-//     const url = await getPresignedUrl(s3Key, 3600, "getObject"); // generate download URL
-//     res.json({ url });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to generate pre-signed URL" });
-//   }
-// });
 
 app.post("/start-encode", authenticateToken, async (req, res) => {
   const { videoId, s3Key, title, description } = req.body;
@@ -328,3 +316,16 @@ app.get("/create-user-videos-table", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+
+// app.get("/get-video-url-test", async (req, res) => {
+//   const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
+
+//   try {
+//     const url = await getPresignedUrl(s3Key, 3600, "getObject"); // generate download URL
+//     res.json({ url });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Failed to generate pre-signed URL" });
+//   }
+// });

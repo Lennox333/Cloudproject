@@ -8,6 +8,7 @@ import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
 import { config } from "./secretManager.js"; // Use config object
 
+const { DYNAMO_TABLE } = config
 // Save a new video for a user
 async function saveUserVideo({
   userId,
@@ -18,7 +19,7 @@ async function saveUserVideo({
 }) {
   try {
     const params = {
-      TableName: config.DYNAMO_TABLE,
+      TableName: DYNAMO_TABLE,
       Item: {
         user_id: userId,
         video_id: videoId,
@@ -44,7 +45,7 @@ async function saveUserVideo({
 async function getVideoById(videoId) {
   try {
     const params = {
-      TableName: config.DYNAMO_TABLE,
+      TableName: DYNAMO_TABLE,
       IndexName: "VideoIdIndex",
       KeyConditionExpression: "#vid = :vid",
       ExpressionAttributeNames: { "#vid": "video_id" },
@@ -63,7 +64,6 @@ async function getVideoById(videoId) {
       title: video.video_title,
       description: video.description || null,
       status: video.status,
-      thumbnailKey: video.thumbnail_key || null,
       createdAt: video.created_at,
     };
   } catch (err) {
@@ -79,7 +79,7 @@ async function addVideoThumbnail(videoId, thumbnailKey) {
     if (!video || !video.userId) return { error: "Video not found" };
 
     const params = {
-      TableName: config.DYNAMO_TABLE,
+      TableName: DYNAMO_TABLE,
       Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET thumbnail_key = :thumbnail",
       ExpressionAttributeValues: { ":thumbnail": thumbnailKey },
@@ -100,7 +100,7 @@ async function updateVideoStatus(videoId, status) {
     if (!video || !video.userId) return { error: "Video not found" };
 
     const params = {
-      TableName: config.DYNAMO_TABLE,
+      TableName: DYNAMO_TABLE,
       Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET #st = :status",
       ExpressionAttributeNames: { "#st": "status" },
@@ -127,7 +127,7 @@ async function fetchVideos({
 
   try {
     const params = {
-      TableName: config.DYNAMO_TABLE,
+      TableName: DYNAMO_TABLE,
       KeyConditionExpression: "#uid = :uid",
       ExpressionAttributeNames: { "#uid": "user_id" },
       ExpressionAttributeValues: { ":uid": userId },
@@ -155,7 +155,6 @@ async function fetchVideos({
       title: item.video_title,
       description: item.description || null,
       status: item.status,
-      thumbnailKey: item.thumbnail_key || null,
       createdAt: item.created_at,
     }));
 
@@ -176,7 +175,7 @@ async function deleteUserVideo(videoId) {
   try {
     await docClient.send(
       new DeleteCommand({
-        TableName: config.DYNAMO_TABLE,
+        TableName: DYNAMO_TABLE,
         Key: { video_id: videoId },
       })
     );

@@ -8,7 +8,7 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 
 // Define the region and base path, fallback to hardcoded if environment variable is not available
-const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
+const AWS_REGION =  "ap-southeast-2";
 const PARAMETER_STORE_PATH = `/n11772891/`;
 const SECRETS_MANAGER_NAME = `n11772891-cognito-secrets`;
 
@@ -51,10 +51,7 @@ export async function initConfig() {
       });
     }
 
-    // Add derived constants
     config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`;
-    config.USER_KEY = `${config.QUT_USERNAME}-user_id`;
-    config.VIDEO_KEY = `${config.QUT_USERNAME}-video_id`;
 
     console.log("Configuration and secrets loaded successfully.");
     return config;

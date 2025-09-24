@@ -2,8 +2,9 @@ import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 import { config } from "../utils/secretManager.js"; // Import the config object
 
+const { AWS_REGION, USER_POOL_ID } = config;
 const client = jwksClient({
-  jwksUri: `https://cognito-idp.${config.AWS_REGION}.amazonaws.com/${config.USER_POOL_ID}/.well-known/jwks.json`,
+  jwksUri: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
 });
 
 // Get key from Cognito
@@ -26,7 +27,7 @@ function authenticateToken(req, res, next) {
     getKey,
     {
       algorithms: ["RS256"],
-      issuer: `https://cognito-idp.${config.AWS_REGION}.amazonaws.com/${config.USER_POOL_ID}`,
+      issuer: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}`,
     },
     (err, decoded) => {
       if (err) return res.status(403).json({ error: "Invalid token" });

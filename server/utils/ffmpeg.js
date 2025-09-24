@@ -1,10 +1,6 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { spawn } from "child_process";
-import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
-import { getPresignedUrl, s3, uploadToS3, uploadToS3Multipart } from "./s3.js";
-
-import { config } from "./secretManager.js";
-import { Upload } from "@aws-sdk/lib-storage";
+import { updateVideoStatus } from "./videos.js";
+import { getPresignedUrl, uploadToS3Multipart } from "./s3.js";
 import { PassThrough } from "stream";
 
 // async function generateThumbnailFromStream(s3Url, videoId) {
@@ -204,13 +200,14 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
 
-    console.log(s3Url)
+    console.log(s3Url);
     // Thumbnail
     await generateThumbnail(s3Url, videoId);
 
     // Videos
-
     await transcodeAllResolutions(s3Url, videoId);
+
+    await updateVideoStatus(videoId, "processed");
   } catch (err) {
     console.error("[Video] Transcoding failed for videoId:", videoId, err);
     await updateVideoStatus(videoId, "failed");
