@@ -11,6 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
+import { Upload } from "@aws-sdk/lib-storage";
 
 // const s3 = new S3Client({
 //   region: AWS_REGION,
