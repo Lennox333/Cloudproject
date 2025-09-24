@@ -126,8 +126,7 @@ async function generateThumbnail(s3Url, videoId) {
   });
 }
 
-async function transcodeVideo(s3Url, videoId, scale) {
-  const s3Key = `videos/${videoId}-${scale}.mp4`;
+async function transcodeVideo(s3Url, s3Key, scale) {
   const pass = new PassThrough();
   const ffmpeg = spawn(
     "ffmpeg",
@@ -185,7 +184,7 @@ async function transcodeAllResolutions(s3Url, videoId) {
 
   // map each resolution to a transcodeVideo promise
   const transcodePromises = resolutions.map((r) =>
-    transcodeVideo(s3Url, videoId, r.scale)
+    transcodeVideo(s3Url, r.name, r.scale)
   );
 
   try {
