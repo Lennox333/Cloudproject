@@ -16,7 +16,6 @@ async function saveUserVideo({
   title,
   description = null,
   status = "processing",
-  thumbnailKey = null,
 }) {
   try {
     const params = {
@@ -27,7 +26,6 @@ async function saveUserVideo({
         video_title: title,
         description,
         status,
-        thumbnail_key: thumbnailKey,
         created_at: new Date().toISOString(),
       },
       ConditionExpression: "attribute_not_exists(#vid)", // prevent overwrite
@@ -41,6 +39,7 @@ async function saveUserVideo({
     return { error: "Failed to save video metadata" };
   }
 }
+
 
 // Get a video by its videoId (using GSI)
 async function getVideoById(videoId) {

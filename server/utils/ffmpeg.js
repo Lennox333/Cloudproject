@@ -119,7 +119,6 @@ async function generateThumbnail(s3Url, videoId) {
     console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
     uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
       .then(async () => {
-        await addVideoThumbnail(videoId, thumbnailKey);
         console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
         resolve(thumbnailKey);
       })
