@@ -3,6 +3,8 @@ import { spawn } from "child_process";
 import { addVideoThumbnail, updateVideoStatus } from "./videos.js";
 import { getPresignedUrl, s3, uploadToS3, uploadToS3Multipart } from "./s3.js";
 
+import { config } from "./secretManager.js";
+import { Upload } from "@aws-sdk/lib-storage";
 import { PassThrough } from "stream";
 
 // async function generateThumbnailFromStream(s3Url, videoId) {
