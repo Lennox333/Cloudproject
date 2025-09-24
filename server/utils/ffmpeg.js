@@ -87,115 +87,61 @@ import { PassThrough } from "stream";
 async function generateThumbnail(s3Url, videoId) {
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   const pass = new PassThrough();
+  const ffmpeg = spawn(
+    "ffmpeg",
+    ["-i", s3Url, "-ss", "00:00:01", "-vframes", "1", "-f", "image2", "-update", "1", "pipe:1"],
+    { stdio: ["ignore", "pipe", "ignore"] }
+  );
 
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn(
-      "ffmpeg",
-      [
-        "-i",
-        s3Url,
-        "-ss",
-        "00:00:01",
-        "-vframes",
-        "1",
-        "-f",
-        "image2",
-        "-update",
-        "1",
-        "pipe:1",
-      ],
-      {
-        stdio: ["ignore", "pipe", "ignore"], // suppress stdout logging; keep stdout as pipe
-      }
-    );
-    ffmpeg.stdout.pipe(pass);
+  ffmpeg.stdout.pipe(pass);
 
-    ffmpeg.on("error", reject);
-    ffmpeg.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(`FFmpeg exited with code ${code}`));
-      }
+  ffmpeg.on("error", (err) => console.error(`[FFmpeg] Thumbnail Error: ${err}`));
+  ffmpeg.stderr.on("data", (data) => console.error(`[FFmpeg] ${data.toString()}`));
+
+  console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
+  return uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
+    .then(async () => {
+      await addVideoThumbnail(videoId, thumbnailKey);
+      console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
+      return thumbnailKey;
+    })
+    .catch((err) => {
+      console.error(`[Thumbnail] Upload failed: ${err}`);
+      throw err;
     });
-
-    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
-    uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
-      .then(async () => {
-        await addVideoThumbnail(videoId, thumbnailKey); // Optional DB update
-        console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
-        resolve(thumbnailKey);
-      })
-      .catch(reject);
-  });
 }
 
-// import fs from "fs";
-// import path from "path";
-// async function generateThumbnailLocal(s3Url, videoId) {
-//   const thumbnailDir = path.resolve("./thumbnails");
-//   if (!fs.existsSync(thumbnailDir))
-//     fs.mkdirSync(thumbnailDir, { recursive: true });
+async function transcodeVideo(s3Url, videoId, scale) {
+  const s3Key = `videos/${videoId}-${scale}.mp4`;
+  const pass = new PassThrough();
+  const ffmpeg = spawn(
+    "ffmpeg",
+    ["-i", s3Url, "-vf", `scale=${scale}`, "-c:v", "libx264", "-crf", "23", "-preset", "medium", "-c:a", "aac", "-f", "mp4", "pipe:1"],
+    { stdio: ["ignore", "pipe", "ignore"] }
+  );
 
-//   const thumbnailPath = path.join(thumbnailDir, `${videoId}.jpg`);
+  ffmpeg.stdout.pipe(pass);
 
-//   return new Promise((resolve, reject) => {
-//     const ffmpeg = spawn("ffmpeg", [
-//       "-i",
-//       s3Url, // Input video URL (can be presigned)
-//       "-ss",
-//       "00:00:01", // Seek to 1 second
-//       "-vframes",
-//       "1", // Take only one frame
-//       thumbnailPath, // Output file path
-//     ]);
+  ffmpeg.on("error", (err) => console.error(`[FFmpeg] Transcode Error: ${err}`));
+  ffmpeg.stderr.on("data", (data) => console.error(`[FFmpeg] ${data.toString()}`));
 
-//     ffmpeg.on("error", reject);
-//     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-
-//     ffmpeg.on("close", async (code) => {
-//       if (code === 0) {
-//         // Optional: upload to S3 here
-//         // await uploadToS3(fs.createReadStream(thumbnailPath), `thumbnails/${videoId}.jpg`, "image/jpeg");
-//         resolve(thumbnailPath);
-//       } else {
-//         reject(new Error(`ffmpeg exited with code ${code}`));
-//       }
-//     });
-//   });
-// }
-
-async function transcodeResolution(inputStream, s3Key, scale) {
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      "pipe:0",
-      "-vf",
-      `scale=${scale}`,
-      "-c:v",
-      "libx264",
-      "-crf",
-      "23",
-      "-preset",
-      "medium",
-      "-c:a",
-      "aac",
-      "-f",
-      "mp4",
-      "pipe:1",
-    ]);
-
-    ffmpeg.on("error", reject);
-    ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-
-    uploadToS3(ffmpeg.stdout, s3Key, "video/mp4").then(resolve).catch(reject);
-
-    inputStream.pipe(ffmpeg.stdin, { end: true });
-  });
+  console.log(`[Transcode] Uploading transcoded video to S3: ${s3Key}`);
+  return uploadToS3Multipart(pass, s3Key, "video/mp4")
+    .then(() => {
+      console.log(`[Transcode] Upload successful: ${s3Key}`);
+      return s3Key;
+    })
+    .catch((err) => {
+      console.error(`[Transcode] Upload failed: ${err}`);
+      throw err;
+    });
 }
+
 
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
-    console.log(s3Url);
+
     // Transcode resolutions
     const resolutions = [
       { name: `${videoId}_360p.mp4`, scale: "640:360" },
@@ -204,23 +150,15 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     ];
 
     // Thumbnail
-    // await generateThumbnailFromStream(s3Url, videoId);
-
-    // await generateThumbnailLocal(s3Url, videoId);
-
     await generateThumbnail(s3Url, videoId);
+
     // Videos
-    // await Promise.all(resolutions.map(async ({ name, scale }) => {
-    //   const stream = await s3
-    //     .send(new GetObjectCommand({ Bucket: BUCKET, Key: s3KeyOriginal }))
-    //     .then(res => res.Body);
-    //   return transcodeResolution(stream, `videos/${name}`, scale);
-    // }));
+    
 
     // await updateVideoStatus(videoId, "processed");
-    console.log(`Video ${videoId} processed successfully`);
+    console.log(`[Video] ${videoId} processed successfully`);
   } catch (err) {
-    console.error("Transcoding failed for videoId:", videoId, err);
+    console.error("[Video] Transcoding failed for videoId:", videoId, err);
     await updateVideoStatus(videoId, "failed");
   }
 }
