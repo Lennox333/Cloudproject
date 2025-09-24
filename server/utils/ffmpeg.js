@@ -202,13 +202,15 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
     const s3Url = await getPresignedUrl(s3KeyOriginal);
 
-    console.log(s3Url)
-    // Thumbnail
-    await generateThumbnail(s3Url, videoId);
+    console.log(s3Url);
+    const thumbnailPromise = generateThumbnail(s3Url, videoId);
+    const videoPromise = transcodeAllResolutions(s3Url, videoId);
 
-    // Videos
+    // Wait for all tasks to complete
+    await Promise.all([thumbnailPromise, videoPromise]);
 
-    await transcodeAllResolutions(s3Url, videoId);
+    await updateVideoStatus(videoId, "processed");
+    console.log(`[Video] All processing done for videoId: ${videoId}`);
   } catch (err) {
     console.error("[Video] Transcoding failed for videoId:", videoId, err);
     await updateVideoStatus(videoId, "failed");
