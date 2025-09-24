@@ -113,3 +113,6 @@ curl -X POST http://$AWSURL:5000/transcodetest \
     \"videoId\": \"$VIDEO_ID\",
     \"s3Key\": \"$S3_KEY\",
     \"title\": \"$TITLE\"  }"
+
+
+curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4&resolution=720p"
