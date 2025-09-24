@@ -106,17 +106,18 @@ async function generateThumbnailMultipart(s3Url, videoId) {
 
       "pipe:1", // Output to stdout
     ]);
-
+    const pass = new PassThrough();
+    ffmpeg.stdout.pipe(pass);
     ffmpeg.on("error", reject);
     ffmpeg.stderr.on("data", (data) => console.error(data.toString()));
-
+    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
     // Multipart upload via AWS SDK v3
     const upload = new Upload({
-      client: s3Client,
+      client: s3,
       params: {
         Bucket: BUCKET,
         Key: thumbnailKey,
-        Body: ffmpeg.stdout,
+        Body: pass,
         ContentType: "image/jpeg",
       },
       queueSize: 4, // concurrency
@@ -127,6 +128,7 @@ async function generateThumbnailMultipart(s3Url, videoId) {
       .done()
       .then(async () => {
         // await addVideoThumbnail(videoId, thumbnailKey);
+        console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
         resolve(thumbnailKey);
       })
       .catch(reject);
@@ -209,11 +211,11 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     ];
 
     // Thumbnail
-    await generateThumbnailFromStream(s3Url, videoId);
+    // await generateThumbnailFromStream(s3Url, videoId);
 
     // await generateThumbnailLocal(s3Url, videoId);
 
-    // await generateThumbnailMultipart(s3Url, videoId);
+    await generateThumbnailMultipart(s3Url, videoId);
     // Videos
     // await Promise.all(resolutions.map(async ({ name, scale }) => {
     //   const stream = await s3
