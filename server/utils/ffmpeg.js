@@ -89,26 +89,46 @@ async function generateThumbnail(s3Url, videoId) {
   const pass = new PassThrough();
   const ffmpeg = spawn(
     "ffmpeg",
-    ["-i", s3Url, "-ss", "00:00:01", "-vframes", "1", "-f", "image2", "-update", "1", "pipe:1"],
-    { stdio: ["ignore", "pipe", "ignore"] }
+    [
+      "-i",
+      s3Url,
+      "-ss",
+      "00:00:01",
+      "-vframes",
+      "1",
+      "-f",
+      "image2",
+      "-update",
+      "1",
+      "pipe:1",
+    ],
+    {
+      stdio: ["pipe", "pipe", "pipe"], // pipe stdout & stderr
+    }
   );
+  return new Promise((resolve, reject) => {
+    ffmpeg.stdout.pipe(pass);
 
-  ffmpeg.stdout.pipe(pass);
-
-  ffmpeg.on("error", (err) => console.error(`[FFmpeg] Thumbnail Error: ${err}`));
-  ffmpeg.stderr.on("data", (data) => console.error(`[FFmpeg] ${data.toString()}`));
-
-  console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
-  return uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
-    .then(async () => {
-      await addVideoThumbnail(videoId, thumbnailKey);
-      console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
-      return thumbnailKey;
-    })
-    .catch((err) => {
-      console.error(`[Thumbnail] Upload failed: ${err}`);
-      throw err;
+    ffmpeg.stderr.on("data", (data) => {
+      console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
     });
+
+    ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
+    ffmpeg.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`FFmpeg exited with code ${code}`));
+      }
+    });
+
+    console.log(`[Thumbnail] Uploading thumbnail to S3: ${thumbnailKey}`);
+    uploadToS3Multipart(pass, thumbnailKey, "image/jpeg")
+      .then(async () => {
+        await addVideoThumbnail(videoId, thumbnailKey);
+        console.log(`[Thumbnail] Upload successful: ${thumbnailKey}`);
+        resolve(thumbnailKey);
+      })
+      .catch(reject);
+  });
 }
 
 async function transcodeVideo(s3Url, videoId, scale) {
@@ -116,27 +136,50 @@ async function transcodeVideo(s3Url, videoId, scale) {
   const pass = new PassThrough();
   const ffmpeg = spawn(
     "ffmpeg",
-    ["-i", s3Url, "-vf", `scale=${scale}`, "-c:v", "libx264", "-crf", "23", "-preset", "medium", "-c:a", "aac", "-f", "mp4", "pipe:1"],
-    { stdio: ["ignore", "pipe", "ignore"] }
+    [
+      "-i",
+      s3Url,
+      "-vf",
+      `scale=${scale}`,
+      "-c:v",
+      "libx264",
+      "-crf",
+      "23",
+      "-preset",
+      "medium",
+      "-c:a",
+      "aac",
+      "-f",
+      "mp4",
+      "pipe:1",
+    ],
+    {
+      stdio: ["pipe", "pipe", "pipe"], // pipe stdout & stderr
+    }
   );
 
-  ffmpeg.stdout.pipe(pass);
+  return new Promise((resolve, reject) => {
+    ffmpeg.stdout.pipe(pass);
 
-  ffmpeg.on("error", (err) => console.error(`[FFmpeg] Transcode Error: ${err}`));
-  ffmpeg.stderr.on("data", (data) => console.error(`[FFmpeg] ${data.toString()}`));
-
-  console.log(`[Transcode] Uploading transcoded video to S3: ${s3Key}`);
-  return uploadToS3Multipart(pass, s3Key, "video/mp4")
-    .then(() => {
-      console.log(`[Transcode] Upload successful: ${s3Key}`);
-      return s3Key;
-    })
-    .catch((err) => {
-      console.error(`[Transcode] Upload failed: ${err}`);
-      throw err;
+    ffmpeg.stderr.on("data", (data) => {
+      console.error(`[FFmpeg] ${data.toString()}`); // only log errors/warnings
     });
-}
 
+    ffmpeg.on("error", (err) => console.error(`[FFmpeg] Spawn error: ${err}`));
+
+    ffmpeg.on("close", (code) => {
+      if (code !== 0) reject(new Error(`FFmpeg exited with code ${code}`));
+    });
+
+    console.log(`[Transcode] Uploading transcoded video to S3: ${s3Key}`);
+    uploadToS3Multipart(pass, s3Key, "video/mp4")
+      .then(() => {
+        console.log(`[Transcode] Upload successful: ${s3Key}`);
+        resolve(s3Key);
+      })
+      .catch(reject);
+  });
+}
 
 export async function transcodeAndUpload(videoId, s3KeyOriginal) {
   try {
@@ -153,7 +196,6 @@ export async function transcodeAndUpload(videoId, s3KeyOriginal) {
     await generateThumbnail(s3Url, videoId);
 
     // Videos
-    
 
     // await updateVideoStatus(videoId, "processed");
     console.log(`[Video] ${videoId} processed successfully`);
