@@ -1,13 +1,12 @@
-import { 
+import {
   PutCommand,
   UpdateCommand,
   DeleteCommand,
   QueryCommand,
-  
 } from "@aws-sdk/lib-dynamodb";
 import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
-import { DYNAMO_TABLE } from "./secretManager.js";
+import { config } from "./secretManager.js"; // Use config object
 
 // Save a new video for a user
 async function saveUserVideo({
@@ -20,7 +19,7 @@ async function saveUserVideo({
 }) {
   try {
     const params = {
-      TableName: DYNAMO_TABLE,
+      TableName: config.DYNAMO_TABLE,
       Item: {
         user_id: userId,
         video_id: videoId,
@@ -30,7 +29,7 @@ async function saveUserVideo({
         thumbnail_key: thumbnailKey,
         created_at: new Date().toISOString(),
       },
-      ConditionExpression: "attribute_not_exists(#vid)", // prevent overwrite
+      ConditionExpression: "attribute_not_exists(#vid)",
       ExpressionAttributeNames: { "#vid": "video_id" },
     };
 
@@ -46,7 +45,7 @@ async function saveUserVideo({
 async function getVideoById(videoId) {
   try {
     const params = {
-      TableName: DYNAMO_TABLE,
+      TableName: config.DYNAMO_TABLE,
       IndexName: "VideoIdIndex",
       KeyConditionExpression: "#vid = :vid",
       ExpressionAttributeNames: { "#vid": "video_id" },
@@ -77,13 +76,11 @@ async function getVideoById(videoId) {
 // Add or update video thumbnail
 async function addVideoThumbnail(videoId, thumbnailKey) {
   try {
-    // get user_id from videoId using GSI
     const video = await getVideoById(videoId);
     if (!video || !video.userId) return { error: "Video not found" };
 
-    // update using both keys
     const params = {
-      TableName: DYNAMO_TABLE,
+      TableName: config.DYNAMO_TABLE,
       Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET thumbnail_key = :thumbnail",
       ExpressionAttributeValues: { ":thumbnail": thumbnailKey },
@@ -97,7 +94,6 @@ async function addVideoThumbnail(videoId, thumbnailKey) {
   }
 }
 
-
 // Update video status
 async function updateVideoStatus(videoId, status) {
   try {
@@ -105,7 +101,7 @@ async function updateVideoStatus(videoId, status) {
     if (!video || !video.userId) return { error: "Video not found" };
 
     const params = {
-      TableName: DYNAMO_TABLE,
+      TableName: config.DYNAMO_TABLE,
       Key: { user_id: video.userId, video_id: video.videoId },
       UpdateExpression: "SET #st = :status",
       ExpressionAttributeNames: { "#st": "status" },
@@ -132,7 +128,7 @@ async function fetchVideos({
 
   try {
     const params = {
-      TableName: DYNAMO_TABLE,
+      TableName: config.DYNAMO_TABLE,
       KeyConditionExpression: "#uid = :uid",
       ExpressionAttributeNames: { "#uid": "user_id" },
       ExpressionAttributeValues: { ":uid": userId },
@@ -140,7 +136,6 @@ async function fetchVideos({
       ExclusiveStartKey: lastKey || undefined,
     };
 
-    // Optional filter by created_at
     const filterExpressions = [];
     if (upld_before) {
       filterExpressions.push("created_at <= :before");
@@ -181,7 +176,10 @@ async function fetchVideos({
 async function deleteUserVideo(videoId) {
   try {
     await docClient.send(
-      new DeleteCommand({ TableName: DYNAMO_TABLE, Key: { video_id: videoId } })
+      new DeleteCommand({
+        TableName: config.DYNAMO_TABLE,
+        Key: { video_id: videoId },
+      })
     );
     return { success: true, message: `Deleted ${videoId}` };
   } catch (err) {

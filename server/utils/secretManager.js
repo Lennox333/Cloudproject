@@ -1,22 +1,68 @@
+import {
+  SSMClient,
+  GetParametersByPathCommand
+} from "@aws-sdk/client-ssm";
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand
+} from "@aws-sdk/client-secrets-manager";
 
+// Define the region and base path, fallback to hardcoded if environment variable is not available
+const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
+const PARAMETER_STORE_PATH = `/n11772891/`;
+const SECRETS_MANAGER_NAME = `n11772891-cognito-secrets`;
 
-export const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
-export const BUCKET = process.env.S3_BUCKET || "n11772891-a2";
-export const QUT_USERNAME = process.env.QUT_USERNAME || "n11772891";
-export const PURPOSE = process.env.PURPOSE || "assignment";
+// AWS SDK Clients
+const ssmClient = new SSMClient({
+  region: AWS_REGION
+});
+const secretsManagerClient = new SecretsManagerClient({
+  region: AWS_REGION
+});
 
-export const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || "ap-southeast-2_UHY8axAL5";
+// A single object to hold all configurations and secrets
+const config = {};
 
+// The main async function to load all configurations
+export async function initConfig() {
+  if (Object.keys(config).length > 0) {
+    return config;
+  }
+  
+  try {
+    // Fetch from Secrets Manager
+    const secretCommand = new GetSecretValueCommand({ SecretId: SECRETS_MANAGER_NAME });
+    const { SecretString } = await secretsManagerClient.send(secretCommand);
+    const secrets = JSON.parse(SecretString);
+    Object.assign(config, secrets); // Add all secrets to the config object
 
-export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
-export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
+    // Fetch from Parameter Store
+    const paramCommand = new GetParametersByPathCommand({
+      Path: PARAMETER_STORE_PATH,
+      Recursive: true,
+      WithDecryption: true,
+    });
+    const { Parameters } = await ssmClient.send(paramCommand);
 
-export const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID ||  "2pa4s4qiiseqdidl83vd2cnnq4";
+    if (Parameters) {
+      Parameters.forEach((param) => {
+        const key = param.Name.split('/').pop().toUpperCase();
+        config[key] = param.Value; // Add all parameters to the config object
+      });
+    }
 
-export const COGNITO_CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET ||  "1gvvu02cb8ua5r924lgs9c1sk9guvdj1cf5crldurb4ks8iqg072";
+    // Add derived constants
+    config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`;
+    config.USER_KEY = `${config.QUT_USERNAME}-user_id`;
+    config.VIDEO_KEY = `${config.QUT_USERNAME}-video_id`;
 
+    console.log("Configuration and secrets loaded successfully.");
+    return config;
+  } catch (err) {
+    console.error("Error loading configurations:", err);
+    throw err;
+  }
+}
 
-// Table and key constants
-export const DYNAMO_TABLE = `${QUT_USERNAME}-user_videos`;
-export const USER_KEY = `${QUT_USERNAME}-user_id`; // Partition key
-export const VIDEO_KEY = `${QUT_USERNAME}-video_id`; // Sort key
+// Export the config object for other files to use
+export { config };

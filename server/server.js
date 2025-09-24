@@ -1,9 +1,11 @@
+// server.js
+import { initConfig } from "./utils/secretManager.js";
 import express from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { randomUUID } from "crypto";
 import { authenticateToken } from "./middleware/authentication.js";
 import { transcodeAndUpload } from "./utils/ffmpeg.js";
-import cors from "cors";
 import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
 import {
   isAdmin,
@@ -22,6 +24,9 @@ import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize configurations and secrets before the server starts
+await initConfig();
 
 app.use(
   cors({
