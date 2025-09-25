@@ -51,6 +51,7 @@ export async function initConfig() {
       });
     }
 
+    config.AWS_REGION = AWS_REGION;
     config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`; // put this to paramstore n11772891-user_videos
 
     console.log("Configuration and secrets loaded successfully.");
