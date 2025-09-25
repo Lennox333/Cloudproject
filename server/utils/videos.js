@@ -12,76 +12,33 @@ import { getConfig } from "./envManager.js"; // Use config object
 
 const { DYNAMO_TABLE } = await getConfig();
 // Save a new video for a user
-export async function fetchVideos({
-  userId = null,
-  upld_before,
-  upld_after,
-  limit = 10,
-  lastKey = null,
+async function saveUserVideo({
+  userId,
+  videoId,
+  title,
+  description = null,
+  status = "processing",
 }) {
-  limit = Number(limit) || 10; // ensure number
-  const params = {
-    TableName: DYNAMO_TABLE,
-    Limit: limit,
-    ExclusiveStartKey: lastKey || undefined,
-  };
-
-  const filterExpressions = [];
-  const expressionAttributeNames = {};
-  const expressionAttributeValues = {};
-
-  if (userId) {
-    // Query by user_id
-    params.KeyConditionExpression = "#uid = :uid";
-    expressionAttributeNames["#uid"] = "user_id";
-    expressionAttributeValues[":uid"] = userId;
-  }
-
-  if (upld_before) {
-    filterExpressions.push("created_at <= :before");
-    expressionAttributeValues[":before"] = upld_before;
-  }
-  if (upld_after) {
-    filterExpressions.push("created_at >= :after");
-    expressionAttributeValues[":after"] = upld_after;
-  }
-
-  if (filterExpressions.length) {
-    params.FilterExpression = filterExpressions.join(" AND ");
-  }
-  if (Object.keys(expressionAttributeNames).length) {
-    params.ExpressionAttributeNames = expressionAttributeNames;
-  }
-  if (Object.keys(expressionAttributeValues).length) {
-    params.ExpressionAttributeValues = expressionAttributeValues;
-  }
-
   try {
-    let result;
-    if (userId) {
-      result = await docClient.send(new QueryCommand(params));
-    } else {
-      result = await docClient.send(new ScanCommand(params));
-    }
-
-    const videos = (result.Items || []).map((item) => ({
-      videoId: item.video_id,
-      userId: item.user_id,
-      title: item.video_title,
-      description: item.description || null,
-      status: item.status,
-      createdAt: item.created_at,
-    }));
-
-    return {
-      videos,
-      total: videos.length,
-      lastKey: result.LastEvaluatedKey || null,
-      limit,
+    const params = {
+      TableName: DYNAMO_TABLE,
+      Item: {
+        user_id: userId,
+        video_id: videoId,
+        video_title: title,
+        description,
+        status,
+        created_at: new Date().toISOString(),
+      },
+      ConditionExpression: "attribute_not_exists(#vid)",
+      ExpressionAttributeNames: { "#vid": "video_id" },
     };
+
+    await docClient.send(new PutCommand(params));
+    return { message: "Video metadata saved", videoId };
   } catch (err) {
-    console.error("DynamoDB fetchVideos error:", err);
-    return { error: "Failed to fetch videos" };
+    console.error("DynamoDB saveUserVideo error:", err);
+    return { error: "Failed to save video metadata" };
   }
 }
 
@@ -167,35 +124,48 @@ async function fetchVideos({
   limit = 10,
   lastKey = null,
 }) {
-  limit = Number(limit) || 10; // ensure it's a number
+  limit = Number(limit) || 10;
   try {
     const params = {
       TableName: DYNAMO_TABLE,
-      Limit: Number(limit) || 10,
+      Limit: limit,
       ExclusiveStartKey: lastKey || undefined,
     };
 
+    const filterExpressions = [];
+    const expressionAttributeNames = {};
+    const expressionAttributeValues = {};
+
     if (userId) {
       params.KeyConditionExpression = "#uid = :uid";
-      params.ExpressionAttributeNames = { "#uid": "user_id" };
-      params.ExpressionAttributeValues = { ":uid": userId };
+      expressionAttributeNames["#uid"] = "user_id";
+      expressionAttributeValues[":uid"] = userId;
     }
 
-    // Filters
-    const filterExpressions = [];
     if (upld_before) {
       filterExpressions.push("created_at <= :before");
-      params.ExpressionAttributeValues[":before"] = upld_before;
+      expressionAttributeValues[":before"] = upld_before;
     }
     if (upld_after) {
       filterExpressions.push("created_at >= :after");
-      params.ExpressionAttributeValues[":after"] = upld_after;
+      expressionAttributeValues[":after"] = upld_after;
     }
+
     if (filterExpressions.length) {
       params.FilterExpression = filterExpressions.join(" AND ");
     }
+    if (Object.keys(expressionAttributeNames).length) {
+      params.ExpressionAttributeNames = expressionAttributeNames;
+    }
+    if (Object.keys(expressionAttributeValues).length) {
+      params.ExpressionAttributeValues = expressionAttributeValues;
+    }
 
-    // Execute
+    // Use Query if userId exists, else Scan for public fetch
+    const command = userId
+      ? new QueryCommand(params)
+      : new ScanCommand(params);
+
     const result = await docClient.send(command);
 
     const videos = (result.Items || []).map((item) => ({
