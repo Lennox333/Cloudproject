@@ -17,7 +17,7 @@ test rds aws, and remember tochange env in database.js
 
 
 remember to put these into secret manager const REGION = "ap-southeast-2";
-const BUCKET = process.env.S3_BUCKET_NAME;
+const S3_BUCKET = process.env.S3_BUCKET_NAME;
 const QUT_USERNAME = "n11772891"
 const PURPOSE = "assignment"
 process.env.COGNITO_IDENTITY_POOL_ID

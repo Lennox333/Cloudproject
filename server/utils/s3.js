@@ -11,7 +11,7 @@ import { config } from "./secretManager.js"; // Use config object
 import { Upload } from "@aws-sdk/lib-storage";
 
 
-const {BUCKET, AWS_REGION, QUT_USERNAME, PURPOSE}  = config
+const {S3_BUCKET, AWS_REGION, QUT_USERNAME, PURPOSE}  = config
 // const s3 = new S3Client({
 //   region: AWS_REGION,
 //   credentials: fromCognitoIdentityPool({
@@ -27,7 +27,7 @@ export const s3 = new S3Client({
 // Create / Tag Bucket
 async function createIfNotExist() {
   const tagCommand = new PutBucketTaggingCommand({
-    Bucket: BUCKET,
+    Bucket: S3_BUCKET,
     Tagging: {
       TagSet: [
         { Key: "qut-username", Value: QUT_USERNAME },
@@ -38,8 +38,8 @@ async function createIfNotExist() {
 
   try {
     // Check bucket exists
-    await s3.send(new HeadBucketCommand({ Bucket: BUCKET }));
-    console.log(`Bucket "${BUCKET}" exists.`);
+    await s3.send(new HeadBucketCommand({ Bucket: S3_BUCKET }));
+    console.log(`Bucket "${S3_BUCKET}" exists.`);
 
     // Apply tags
     const response = await s3.send(tagCommand);
@@ -47,7 +47,7 @@ async function createIfNotExist() {
     return { success: true };
   } catch (err) {
     if (err.name === "NotFound") {
-      console.error(`Bucket "${BUCKET}" does not exist.`);
+      console.error(`Bucket "${S3_BUCKET}" does not exist.`);
       return { error: "Bucket not found" };
     } else {
       console.error("Error checking bucket:", err);
@@ -60,9 +60,9 @@ async function createIfNotExist() {
 async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
   let command;
   if (operation === "getObject") {
-    command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+    command = new GetObjectCommand({ Bucket: S3_BUCKET, Key: key });
   } else if (operation === "putObject") {
-    command = new PutObjectCommand({ Bucket: BUCKET, Key: key });
+    command = new PutObjectCommand({ Bucket: S3_BUCKET, Key: key });
   } else {
     throw new Error("Invalid operation");
   }
@@ -74,7 +74,7 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
 async function uploadToS3(buffer, key, contentType) {
   await s3.send(
     new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: S3_BUCKET,
       Key: key,
       Body: buffer,
       ContentType: contentType,
@@ -86,7 +86,7 @@ async function uploadToS3Multipart(body, key, contentType) {
   const upload = new Upload({
     client: s3,
     params: {
-      Bucket: BUCKET,
+      Bucket: S3_BUCKET,
       Key: key,
       Body: body,
       ContentType: contentType,
@@ -109,7 +109,7 @@ async function deleteVideoFiles(videoId) {
     ];
 
     for (const key of keysToDelete) {
-      await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+      await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
       console.log("Deleted S3 object:", key);
     }
 
