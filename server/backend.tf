@@ -11,90 +11,43 @@ variable "qut_username" {
 }
 
 variable "purpose" {
-  type        = string
-  description = "assignment"
+  type    = string
+  default = "assignment"
 }
 
+
+
 # ----------------------------
-# 1. EC2 Instance using existing Launch Template (t3.micro)
+# EC2 Instance using existing Launch Template
 # ----------------------------
-resource "aws_instance" "ecs_instance" {
+resource "aws_instance" "backend_ec2" {
   launch_template {
-    id      = "lt-0da254432ded0d3d7"  # REPLACE with your existing Launch Template ID
+    id      = "lt-0da254432ded0d3d7"  # your Launch Template ID
     version = "$Latest"
   }
 
-  # Override the instance type to t3.micro
-  instance_type = "t3.micro"
+  # User data: install Docker, login to ECR, pull and run container
+  user_data = <<-EOF
+              #!/bin/bash
+              # Install Docker if not already installed
+              which docker || (apt update && apt install -y docker.io)
+              systemctl start docker
+              systemctl enable docker
 
-  # Optional additional tags for this specific instance
-  tags = {
-    QUT_USERNAME = var.qut_username
-    PURPOSE      = var.purpose
-    Name         = "ECS-Backend-Instance"
-  }
-}
+              # Login to ECR
+              aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 
-# ----------------------------
-# 2. ECS Cluster
-# ----------------------------
-resource "aws_ecs_cluster" "backend_cluster" {
-  name = "n11772891_server"
+              # Pull and run backend container
+              docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
+              docker run -d -p 5000:5000 \
+                -e PURPOSE_PARAM=/n11772891/purpose \
+                -e QUT_USERNAME_PARAM=/n11772891/qut_username \
+                -e S3_BUCKET_PARAM=/n11772891/s3_bucket \
+                -e USER_POOL_ID_PARAM=/n11772891/user_pool_id \
+                -e COGNITO_SECRET_NAME=n11772891-cognito-secrets \
+                -e AWS_REGION=ap-southeast-2 \
+                901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
+              EOF
 
-  tags = {
-    QUT_USERNAME = var.qut_username
-    PURPOSE      = var.purpose
-  }
-}
 
-# ----------------------------
-# 3. ECS Task Definition (Backend Only, EC2)
-# ----------------------------
-resource "aws_ecs_task_definition" "backend_task" {
-  family                   = "backend-task"
-  requires_compatibilities = ["EC2"]
-  network_mode             = "bridge"
-
-  # Keep full 2 vCPU / 1 GB RAM for FFmpeg processing
-  cpu                      = "2048"   # 2 vCPUs
-  memory                   = "1024"   # 1 GB RAM
-  execution_role_arn       = "arn:aws:iam::901444280953:role/CAB432-Instance-Role"
-
-  container_definitions = jsonencode([
-    {
-      name      = "backend"
-      image     = "901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest"
-      essential = true
-      portMappings = [{ containerPort = 3000, hostPort = 3000 }]
-      environment = [
-        { name = "PURPOSE_PARAM", value = "/n11772891/purpose" },
-        { name = "QUT_USERNAME_PARAM", value = "/n11772891/qut_username" },
-        { name = "S3_BUCKET_PARAM", value = "/n11772891/s3_bucket" },
-        { name = "USER_POOL_ID_PARAM", value = "/n11772891/user_pool_id" },
-        { name = "COGNITO_SECRET_NAME", value = "n11772891-cognito-secrets" },
-        { name = "AWS_REGION", value = "ap-southeast-2" }
-      ]
-    }
-  ])
-
-  tags = {
-    QUT_USERNAME = var.qut_username
-    PURPOSE      = var.purpose
-  }
-}
-
-# ----------------------------
-# 4. ECS Service (EC2 Launch Type)
-# ----------------------------
-resource "aws_ecs_service" "backend_service" {
-  name            = "backend-service"
-  cluster         = aws_ecs_cluster.backend_cluster.id
-  task_definition = aws_ecs_task_definition.backend_task.arn
-  desired_count   = 1
-  launch_type     = "EC2"
-
-  tags = {
-    QUT_USERNAME = var.qut_username
-    PURPOSE      = var.purpose
-  }
 }
