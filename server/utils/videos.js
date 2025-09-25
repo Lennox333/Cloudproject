@@ -3,7 +3,10 @@ import {
   UpdateCommand,
   DeleteCommand,
   QueryCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
+
+
 import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
 import { getConfig } from "./envManager.js"; // Use config object
