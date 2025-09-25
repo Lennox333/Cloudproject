@@ -23,8 +23,6 @@ import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
-
 app.use(
   cors({
     origin: ["http://localhost:1234"], // frontend URL
@@ -164,7 +162,6 @@ app.get("/get-video-url-test", async (req, res) => {
   }
 });
 
-
 app.post("/start-encode", authenticateToken, async (req, res) => {
   const { videoId, s3Key, title, description } = req.body;
   if (!videoId || !s3Key || !title)
@@ -256,9 +253,13 @@ app.get("/videos", async (req, res) => {
     limit,
     lastKey: lastKey ? JSON.parse(lastKey) : null,
   });
+
   if (data.error) return res.status(500).json({ error: data.error });
 
-  res.status(200).json(data);
+  // filter only processed videos for public view
+  const publicVideos = data.videos.filter((v) => v.status === "processed");
+
+  res.status(200).json(publicVideos);
 });
 
 app.get("/videos/:userId", authenticateToken, async (req, res) => {
@@ -329,7 +330,6 @@ app.get("/create-user-videos-table", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
 
 // app.get("/get-video-url-test", async (req, res) => {
 //   const s3Key = "videos/539be652-087a-407a-b117-884e8b2f0dea-example.mp4";
