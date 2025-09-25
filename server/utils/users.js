@@ -5,14 +5,14 @@ import {
   AdminListGroupsForUserCommand,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { getConfig } from "./secretManager.js"; // Import the config object
+import { getConfig } from "./envManager.js"; // Import the config object
 import { cognitoClient } from "./cognitoClient.js";
 import { createHmac } from "crypto";
 
 const { COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID } =
   await getConfig();
 
-  
+
 function calculateSecretHash(username) {
   const message = username + COGNITO_CLIENT_ID;
   const hmac = createHmac("sha256", COGNITO_CLIENT_SECRET);

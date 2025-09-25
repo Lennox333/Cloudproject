@@ -16,12 +16,7 @@ test rds aws, and remember tochange env in database.js
           --profile=default
 
 
-remember to put these into secret manager const REGION = "ap-southeast-2";
-const S3_BUCKET = process.env.S3_BUCKET_NAME;
-const QUT_USERNAME = "n11772891"
-const PURPOSE = "assignment"
-process.env.COGNITO_IDENTITY_POOL_ID
-
+remember to put these into terraform env const REGION = "ap-southeast-2";
 
 docker start -ai server-app-1
 
@@ -61,7 +56,7 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
   }' | jq -r '.accessToken'
 
 
-  TOKEN=$(curl -s -X POST http://ec2-13-54-231-70.ap-southeast-2.compute.amazonaws.com:5000/login \
+  TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ln607090","password":"TestPassword123!"}' | jq -r '.accessToken')
 
@@ -115,4 +110,4 @@ curl -X POST http://$AWSURL:5000/transcodetest \
     \"title\": \"$TITLE\"  }"
 
 
-curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4_720p.ts"
+curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4_720p.mp4"

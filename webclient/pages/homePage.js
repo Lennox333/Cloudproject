@@ -1,24 +1,29 @@
 import { SERVER } from "../utils/globals";
 
 export const pageSize = 5;
-let currentPage = 1;
+let currentLastKey = null; // store lastKey for pagination
 let currentVideoId = null; // store currently playing video
 
-export const fetchVideos = async (page = 1, limit = pageSize) => {
+export const fetchVideos = async (limit = pageSize, lastKey = null) => {
   try {
-    const res = await fetch(
-      `${SERVER}/videos?page=${page}&limit=${limit}`
-    );
-    const data = await res.json();
-    return data; // { videos: [...], total: n }
+    const params = new URLSearchParams({ limit });
+    if (lastKey) params.append("lastKey", JSON.stringify(lastKey));
+
+    const res = await fetch(`${SERVER}/videos?${params.toString()}`);
+    const data = await res.json(); // { videos: [...], total, lastKey }
+    return data;
   } catch (err) {
     console.error(err);
-    return { videos: [], total: 0 };
+    return { videos: [], total: 0, lastKey: null };
   }
 };
 
 export const renderVideos = async () => {
-  const { videos, total } = await fetchVideos(currentPage);
+  const { videos, total, lastKey } = await fetchVideos(
+    pageSize,
+    currentLastKey
+  );
+  currentLastKey = lastKey; // update lastKey for next page
 
   const videoList = videos
     .map(
@@ -35,8 +40,9 @@ export const renderVideos = async () => {
     .join("");
 
   const totalPages = Math.ceil(total / pageSize);
-  const pagination = Array.from({ length: totalPages }, (_, i) =>
-    `<button class="page-btn" data-page="${i + 1}">${i + 1}</button>`
+  const pagination = Array.from(
+    { length: totalPages },
+    (_, i) => `<button class="page-btn" data-page="${i + 1}">${i + 1}</button>`
   ).join("");
 
   document.querySelector("#home-video-list").innerHTML = videoList;

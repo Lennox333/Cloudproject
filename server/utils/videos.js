@@ -6,7 +6,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
-import { getConfig } from "./secretManager.js"; // Use config object
+import { getConfig } from "./envManager.js"; // Use config object
 
 const { DYNAMO_TABLE } = await getConfig();
 // Save a new video for a user
@@ -116,24 +116,35 @@ async function updateVideoStatus(videoId, status) {
 
 // Fetch videos for a user with optional date filters and pagination
 async function fetchVideos({
-  userId,
+  userId = null,
   upld_before,
   upld_after,
   limit = 10,
   lastKey = null,
 }) {
-  if (!userId) return { error: "User ID is required for query" };
-
   try {
     const params = {
       TableName: DYNAMO_TABLE,
-      KeyConditionExpression: "#uid = :uid",
-      ExpressionAttributeNames: { "#uid": "user_id" },
-      ExpressionAttributeValues: { ":uid": userId },
       Limit: limit,
       ExclusiveStartKey: lastKey || undefined,
+      ExpressionAttributeNames: {},
+      ExpressionAttributeValues: {},
     };
 
+    let command;
+
+    if (userId) {
+      // User-specific query
+      params.KeyConditionExpression = "#uid = :uid";
+      params.ExpressionAttributeNames["#uid"] = "user_id";
+      params.ExpressionAttributeValues[":uid"] = userId;
+      command = new QueryCommand(params);
+    } else {
+      // Public fetch - scan all items
+      command = new ScanCommand(params);
+    }
+
+    // Filters
     const filterExpressions = [];
     if (upld_before) {
       filterExpressions.push("created_at <= :before");
@@ -147,7 +158,9 @@ async function fetchVideos({
       params.FilterExpression = filterExpressions.join(" AND ");
     }
 
-    const result = await docClient.send(new QueryCommand(params));
+    // Execute
+    const result = await docClient.send(command);
+
     const videos = (result.Items || []).map((item) => ({
       videoId: item.video_id,
       userId: item.user_id,

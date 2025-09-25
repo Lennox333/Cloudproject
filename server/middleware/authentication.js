@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
-import { getConfig } from "../utils/secretManager.js"; // Import the config object
+import { getConfig } from "../utils/envManager.js"; // Import the config object
 
 const { AWS_REGION, USER_POOL_ID } = await getConfig();
 const client = jwksClient({
