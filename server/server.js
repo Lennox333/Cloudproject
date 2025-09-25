@@ -1,4 +1,3 @@
-import { initConfig } from "./utils/secretManager.js";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
