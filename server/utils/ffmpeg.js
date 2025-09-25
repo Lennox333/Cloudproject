@@ -182,8 +182,8 @@ async function transcodeVideo(s3Url, s3Key, scale) {
 async function transcodeAllResolutions(s3Url, videoId) {
   const resolutions = [
     { name: `${videoId}_360p.mp4`, scale: "640:360" },
-    { name: `${videoId}_480p.mp4`, scale: "854:480" },
-    { name: `${videoId}_720p.mp4`, scale: "1280:720" },
+    // { name: `${videoId}_480p.mp4`, scale: "854:480" },
+    // { name: `${videoId}_720p.mp4`, scale: "1280:720" },
   ];
 
   // map each resolution to a transcodeVideo promise

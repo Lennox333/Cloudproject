@@ -3,6 +3,7 @@ import { SERVER } from "../utils/globals";
 export const pageSize = 5;
 let currentLastKey = null; // store lastKey for pagination
 let currentVideoId = null; // store currently playing video
+const videoPresignedUrls = {}; // store presigned URLs per video and resolution
 
 export const fetchVideos = async (limit = pageSize, lastKey = null) => {
   try {
@@ -18,6 +19,22 @@ export const fetchVideos = async (limit = pageSize, lastKey = null) => {
   }
 };
 
+// helper to fetch presigned URL
+const fetchPresignedUrl = async (videoId, res = "720") => {
+  try {
+    const urlRes = await fetch(`${SERVER}/video/${videoId}/stream?res=${res}`);
+    const data = await urlRes.json();
+    if (data.error) {
+      console.error(`Video ${videoId} not ready:`, data.error);
+      return null;
+    }
+    return data.videoUrl;
+  } catch (err) {
+    console.error("Failed to fetch presigned URL:", err);
+    return null;
+  }
+};
+
 export const renderVideos = async () => {
   const { videos, total, lastKey } = await fetchVideos(
     pageSize,
@@ -25,15 +42,31 @@ export const renderVideos = async () => {
   );
   currentLastKey = lastKey; // update lastKey for next page
 
+  // Pre-fetch presigned URLs for 720p
+  await Promise.all(
+    videos.map(async (v) => {
+      const url = await fetchPresignedUrl(v.videoId, "480");
+      videoPresignedUrls[v.videoId] = { 720: url };
+    })
+  );
+  // Pre-fetch presigned URLs for thumbnails
+  const thumbnailUrls = {};
+  await Promise.all(
+    videos.map(async (v) => {
+      const res = await fetch(`${SERVER}/thumbnails/${v.videoId}`);
+      const data = await res.json();
+      thumbnailUrls[v.videoId] = data.thumbnailUrl;
+    })
+  );
   const videoList = videos
     .map(
       (v) => `
         <li class="video-item">
           <img class="video-thumb" 
-               src="${SERVER}/thumbnails/${v.thumbnail}" 
-               alt="${v.video_title}"
-               data-id="${v.video_id}" />
-          <p>${v.video_title}</p>
+               src="${thumbnailUrls[v.videoId]}" 
+               alt="${v.title}"
+               data-id="${v.videoId}" />
+          <p>${v.title}</p>
         </li>
       `
     )
@@ -59,9 +92,17 @@ export const renderVideos = async () => {
   // quality selector
   const qualitySelector = document.querySelector("#quality-selector");
   if (qualitySelector) {
-    qualitySelector.addEventListener("change", (e) => {
+    qualitySelector.addEventListener("change", async (e) => {
       const res = e.target.value;
       if (currentVideoId) {
+        // fetch presigned URL if not already cached
+        if (!videoPresignedUrls[currentVideoId]?.[res]) {
+          const url = await fetchPresignedUrl(currentVideoId, res);
+          videoPresignedUrls[currentVideoId] = {
+            ...videoPresignedUrls[currentVideoId],
+            [res]: url,
+          };
+        }
         playVideo(currentVideoId, res);
       }
     });
@@ -69,20 +110,30 @@ export const renderVideos = async () => {
 
   // thumbnails -> load video in player
   document.querySelectorAll(".video-thumb").forEach((thumb) => {
-    thumb.addEventListener("click", (e) => {
+    thumb.addEventListener("click", async (e) => {
       const videoId = e.target.dataset.id;
       const res = qualitySelector ? qualitySelector.value : "720";
       currentVideoId = videoId;
+
+      // fetch presigned URL if not already cached
+      if (!videoPresignedUrls[videoId]?.[res]) {
+        const url = await fetchPresignedUrl(videoId, res);
+        videoPresignedUrls[videoId] = {
+          ...videoPresignedUrls[videoId],
+          [res]: url,
+        };
+      }
+
       playVideo(videoId, res);
     });
   });
 };
 
-// helper function to play video
+// helper function to play video using cached presigned URL
 const playVideo = (videoId, res = "720") => {
   const player = document.querySelector("#video-player");
   const source = document.querySelector("#video-source");
-  source.src = `${SERVER}/video/${videoId}?res=${res}`;
+  source.src = videoPresignedUrls[videoId]?.[res] || "";
   player.load();
   player.play();
 };

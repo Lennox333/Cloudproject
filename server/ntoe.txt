@@ -111,3 +111,5 @@ curl -X POST http://$AWSURL:5000/transcodetest \
 
 
 curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4_720p.mp4"
+
+curl -X GET http://$AWSURL:5000/thumbnails/e7795a51-2742-42ea-9d41-39739e13e5f4
