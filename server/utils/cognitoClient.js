@@ -1,4 +1,7 @@
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
-import { config } from "./secretManager.js";
+import { getConfig } from "./secretManager.js";
 
-export const cognitoClient = new CognitoIdentityProviderClient({ region: config.AWS_REGION });
+const { AWS_REGION } = await getConfig();
+export const cognitoClient = new CognitoIdentityProviderClient({
+  region: AWS_REGION,
+});
