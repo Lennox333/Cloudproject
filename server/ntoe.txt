@@ -9,6 +9,8 @@ QUT username like n1234567@qut.edu.au. Teaching staff may need to delete old or 
 test rds aws, and remember tochange env in database.js
 
 
+queue the ffmpeg trancoding
+
  aws ec2 describe-key-pairs \
           --key-names n11547413-New-Key-Pair \
           --include-public-key \
