@@ -1,58 +1,61 @@
-import {
-  SSMClient,
-  GetParametersByPathCommand
-} from "@aws-sdk/client-ssm";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import {
   SecretsManagerClient,
-  GetSecretValueCommand
+  GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 
-// Define the region and base path, fallback to hardcoded if environment variable is not available
-const AWS_REGION =  "ap-southeast-2";
-const PARAMETER_STORE_PATH = `/n11772891/`;
-const SECRETS_MANAGER_NAME = `n11772891-cognito-secrets`;
+// AWS region
+const AWS_REGION = "ap-southeast-2";
+
+// Parameter names (const outside the function)
+const PARAMETERS = {
+  PURPOSE: "/n11772891/purpose",
+  QUT_USERNAME: "/n11772891/qut_username",
+  S3_BUCKET: "/n11772891/s3_bucket",
+  USER_POOL_ID: "/n11772891/user_pool_id",
+};
+
+// Secrets Manager name
+const SECRETS_MANAGER_NAME = "n11772891-cognito-secrets";
 
 // AWS SDK Clients
-const ssmClient = new SSMClient({
-  region: AWS_REGION
-});
-const secretsManagerClient = new SecretsManagerClient({
-  region: AWS_REGION
-});
+const ssmClient = new SSMClient({ region: AWS_REGION });
+const secretsManagerClient = new SecretsManagerClient({ region: AWS_REGION });
 
-// A single object to hold all configurations and secrets
+// Config object
 const config = {};
 
-// The main async function to load all configurations
+// Helper to fetch a single parameter
+async function fetchParameter(name) {
+  const command = new GetParameterCommand({
+    Name: name,
+    WithDecryption: true,
+  });
+  const response = await ssmClient.send(command);
+  return response.Parameter?.Value;
+}
+
+// Main async function to initialize config
 export async function initConfig() {
-  if (Object.keys(config).length > 0) {
-    return config;
-  }
-  
+  if (Object.keys(config).length > 0) return config;
+
   try {
-    // Fetch from Secrets Manager
-    const secretCommand = new GetSecretValueCommand({ SecretId: SECRETS_MANAGER_NAME });
-    const { SecretString } = await secretsManagerClient.send(secretCommand);
-    const secrets = JSON.parse(SecretString);
-    Object.assign(config, secrets); // Add all secrets to the config object
-
-    // Fetch from Parameter Store
-    const paramCommand = new GetParametersByPathCommand({
-      Path: PARAMETER_STORE_PATH,
-      Recursive: true,
-      WithDecryption: true,
+    // Fetch secrets
+    const secretCommand = new GetSecretValueCommand({
+      SecretId: SECRETS_MANAGER_NAME,
     });
-    const { Parameters } = await ssmClient.send(paramCommand);
+    const { SecretString } = await secretsManagerClient.send(secretCommand);
+    Object.assign(config, JSON.parse(SecretString));
 
-    if (Parameters) {
-      Parameters.forEach((param) => {
-        const key = param.Name.split('/').pop().toUpperCase();
-        config[key] = param.Value; // Add all parameters to the config object
-      });
+    // Fetch parameters individually
+    for (const [key, path] of Object.entries(PARAMETERS)) {
+      const value = await fetchParameter(path);
+      config[key] = value;
     }
 
+    // Dynamo table name
+    config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`;
     config.AWS_REGION = AWS_REGION;
-    config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`; // put this to paramstore n11772891-user_videos
 
     console.log("Configuration and secrets loaded successfully.");
     return config;
@@ -62,5 +65,5 @@ export async function initConfig() {
   }
 }
 
-// Export the config object for other files to use
+// Export the config object
 export { config };
