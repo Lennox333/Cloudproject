@@ -5,11 +5,14 @@ import {
   AdminListGroupsForUserCommand,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { config } from "./secretManager.js"; // Import the config object
+import { getConfig } from "./secretManager.js"; // Import the config object
 import { cognitoClient } from "./cognitoClient.js";
 import { createHmac } from "crypto";
 
-const {COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID}  = config
+const { COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID } =
+  await getConfig();
+
+  
 function calculateSecretHash(username) {
   const message = username + COGNITO_CLIENT_ID;
   const hmac = createHmac("sha256", COGNITO_CLIENT_SECRET);
@@ -73,7 +76,7 @@ async function isAdmin(user) {
       Username: user.username,
     });
     const response = await cognitoClient.send(command);
-    const groups = response.Groups.map(g => g.GroupName);
+    const groups = response.Groups.map((g) => g.GroupName);
     if (groups.includes("Admin")) {
       return { success: true };
     } else {

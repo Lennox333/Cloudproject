@@ -7,11 +7,10 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { config } from "./secretManager.js"; // Use config object
+import { getConfig } from "./secretManager.js"; // Use config object
 import { Upload } from "@aws-sdk/lib-storage";
 
-
-const {S3_BUCKET, AWS_REGION, QUT_USERNAME, PURPOSE}  = config
+const { S3_BUCKET, AWS_REGION, QUT_USERNAME, PURPOSE } = await getConfig();
 // const s3 = new S3Client({
 //   region: AWS_REGION,
 //   credentials: fromCognitoIdentityPool({
@@ -105,7 +104,7 @@ async function deleteVideoFiles(videoId) {
       `videos/${videoId}_360p.mp4`,
       `videos/${videoId}_480p.mp4`,
       `videos/${videoId}_720p.mp4`,
-      `thumbnails/${videoId}.jpg/`
+      `thumbnails/${videoId}.jpg/`,
     ];
 
     for (const key of keysToDelete) {
@@ -120,4 +119,10 @@ async function deleteVideoFiles(videoId) {
   }
 }
 
-export { getPresignedUrl, uploadToS3, uploadToS3Multipart, createIfNotExist, deleteVideoFiles };
+export {
+  getPresignedUrl,
+  uploadToS3,
+  uploadToS3Multipart,
+  createIfNotExist,
+  deleteVideoFiles,
+};

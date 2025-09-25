@@ -24,8 +24,7 @@ import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize configurations and secrets before the server starts
-await initConfig();
+
 
 app.use(
   cors({

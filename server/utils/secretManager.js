@@ -1,8 +1,5 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from "@aws-sdk/client-secrets-manager";
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 // AWS region
 const AWS_REGION = "ap-southeast-2";
@@ -22,28 +19,20 @@ const SECRETS_MANAGER_NAME = "n11772891-cognito-secrets";
 const ssmClient = new SSMClient({ region: AWS_REGION });
 const secretsManagerClient = new SecretsManagerClient({ region: AWS_REGION });
 
-// Config object
-const config = {};
-
 // Helper to fetch a single parameter
 async function fetchParameter(name) {
-  const command = new GetParameterCommand({
-    Name: name,
-    WithDecryption: true,
-  });
+  const command = new GetParameterCommand({ Name: name, WithDecryption: true });
   const response = await ssmClient.send(command);
   return response.Parameter?.Value;
 }
 
-// Main async function to initialize config
-export async function initConfig() {
-  if (Object.keys(config).length > 0) return config;
-
+// Main function to fetch all config + secrets
+export async function getConfig() {
   try {
-    // Fetch secrets
-    const secretCommand = new GetSecretValueCommand({
-      SecretId: SECRETS_MANAGER_NAME,
-    });
+    const config = {};
+
+    // Fetch Secrets Manager values
+    const secretCommand = new GetSecretValueCommand({ SecretId: SECRETS_MANAGER_NAME });
     const { SecretString } = await secretsManagerClient.send(secretCommand);
     Object.assign(config, JSON.parse(SecretString));
 
@@ -53,17 +42,13 @@ export async function initConfig() {
       config[key] = value;
     }
 
-    // Dynamo table name
+    // Add derived values
     config.DYNAMO_TABLE = `${config.QUT_USERNAME}-user_videos`;
     config.AWS_REGION = AWS_REGION;
 
-    console.log("Configuration and secrets loaded successfully.");
     return config;
   } catch (err) {
-    console.error("Error loading configurations:", err);
+    console.error("Error loading configuration:", err);
     throw err;
   }
 }
-
-// Export the config object
-export { config };

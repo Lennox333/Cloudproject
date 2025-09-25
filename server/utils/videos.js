@@ -6,9 +6,9 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
-import { config } from "./secretManager.js"; // Use config object
+import { getConfig } from "./secretManager.js"; // Use config object
 
-const { DYNAMO_TABLE } = config
+const { DYNAMO_TABLE } = await getConfig();
 // Save a new video for a user
 async function saveUserVideo({
   userId,
@@ -39,7 +39,6 @@ async function saveUserVideo({
     return { error: "Failed to save video metadata" };
   }
 }
-
 
 // Get a video by its videoId (using GSI)
 async function getVideoById(videoId) {

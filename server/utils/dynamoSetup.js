@@ -4,9 +4,9 @@ import {
   DescribeTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import * as DynamoDBLib from "@aws-sdk/lib-dynamodb";
-import { config } from "./secretManager.js"; 
+import { getConfig } from "./secretManager.js"; 
 
-const {AWS_REGION, DYNAMO_TABLE} = config
+const {AWS_REGION, DYNAMO_TABLE} = await getConfig()
 // DynamoDB clients
 const dynamo = new DynamoDBClient({ region: AWS_REGION });
 export const docClient =

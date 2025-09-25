@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
-import { config } from "../utils/secretManager.js"; // Import the config object
+import { config, initConfig } from "../utils/secretManager.js"; // Import the config object
 
-const { AWS_REGION, USER_POOL_ID } = config;
+const { AWS_REGION, USER_POOL_ID } = await initConfig();
 const client = jwksClient({
   jwksUri: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
 });
