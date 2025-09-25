@@ -1,14 +1,15 @@
 import { SERVER } from "../utils/globals";
 
 export const MyVideoItem = (video) => `
-  <li class="video-item" data-id="${video.video_id}">
+  <li class="video-item" data-id="${video.videoId}">
     <img 
       class="video-thumb" 
-      src="${SERVER}/thumbnails/${video.video_id}.jpg" 
-      alt="${video.video_title}" 
-      data-id="${video.video_id}"
+      src="${SERVER}/thumbnails/${video.videoId}" 
+      alt="${video.title}" 
+      data-id="${video.videoId}"
     />
-    <p>${video.video_title}</p>
+    <p>${video.title}</p>
+    <p>Status: ${video.status}</p>
     <button class="delete-btn">Delete</button>
   </li>
 `;

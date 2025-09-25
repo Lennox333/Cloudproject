@@ -2,3 +2,4 @@ server/node_modules
 webclient/node_modules
 webclient/.parcel-cache
 webclient/dist
+webclient

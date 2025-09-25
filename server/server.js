@@ -211,7 +211,7 @@ app.get("/thumbnails/:videoId", async (req, res) => {
   }
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   const thumbnailUrl = await getPresignedUrl(thumbnailKey, 3600, "getObject");
-  res.status(200).json({ thumbnailUrl });
+  res.status(200).redirect({ thumbnailUrl });
 });
 
 app.get("/video/:id/stream", async (req, res) => {

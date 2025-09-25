@@ -49,26 +49,17 @@ export const renderVideos = async () => {
       videoPresignedUrls[v.videoId] = { 720: url };
     })
   );
-  // Pre-fetch presigned URLs for thumbnails
-  const thumbnailUrls = {};
-  await Promise.all(
-    videos.map(async (v) => {
-      const res = await fetch(`${SERVER}/thumbnails/${v.videoId}`);
-      const data = await res.json();
-      thumbnailUrls[v.videoId] = data.thumbnailUrl;
-    })
-  );
   const videoList = videos
     .map(
       (v) => `
-        <li class="video-item">
-          <img class="video-thumb" 
-               src="${thumbnailUrls[v.videoId]}" 
-               alt="${v.title}"
-               data-id="${v.videoId}" />
-          <p>${v.title}</p>
-        </li>
-      `
+      <li class="video-item">
+        <img class="video-thumb" 
+             src="${SERVER}/thumbnails/${v.videoId}" 
+             alt="${v.title}"
+             data-id="${v.videoId}" />
+        <p>${v.title}</p>
+      </li>
+    `
     )
     .join("");
 

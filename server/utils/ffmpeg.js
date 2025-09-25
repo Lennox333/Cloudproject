@@ -138,7 +138,7 @@ async function transcodeVideo(s3Url, s3Key, scale) {
       "-c:v",
       "libx264",
       "-crf",
-      "23",
+      "28",
       "-r",
       "30",
       "-preset",
