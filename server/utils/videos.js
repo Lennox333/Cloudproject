@@ -6,7 +6,6 @@ import {
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-
 import { docClient } from "./dynamoSetup.js";
 import { deleteVideoFiles } from "./s3.js";
 import { getConfig } from "./envManager.js"; // Use config object
@@ -125,6 +124,7 @@ async function fetchVideos({
   limit = 10,
   lastKey = null,
 }) {
+  limit = Number(limit) || 10; // ensure it's a number
   try {
     const params = {
       TableName: DYNAMO_TABLE,
