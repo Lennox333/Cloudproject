@@ -259,7 +259,12 @@ app.get("/videos", async (req, res) => {
   // filter only processed videos for public view
   const publicVideos = data.videos.filter((v) => v.status === "processed");
 
-  res.status(200).json(publicVideos);
+  res.status(200).json({
+    videos: publicVideos,
+    total: publicVideos.length,
+    lastKey: data.lastKey,
+    limit: data.limit,
+  });
 });
 
 app.get("/videos/:userId", authenticateToken, async (req, res) => {
