@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getConfig } from "./envManager.js"; // Use config object
 import { Upload } from "@aws-sdk/lib-storage";
+import { cachePresignedUrl, getCachedPresignedUrl } from "./cache.js";
 
 const { S3_BUCKET, AWS_REGION, QUT_USERNAME, PURPOSE } = await getConfig();
 // const s3 = new S3Client({
@@ -57,6 +58,13 @@ async function createIfNotExist() {
 
 // Generate pre-signed URL
 async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
+  const cacheKey = `${operation}:${key}`;
+
+  //  Check cache first
+  const cachedUrl = getCachedPresignedUrl(cacheKey);
+  if (cachedUrl) return cachedUrl;
+
+  //  Create the command
   let command;
   if (operation === "getObject") {
     command = new GetObjectCommand({ Bucket: S3_BUCKET, Key: key });
@@ -66,7 +74,13 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
     throw new Error("Invalid operation");
   }
 
-  return getSignedUrl(s3, command, { expiresIn });
+  //  Generate signed URL
+  const url = await getSignedUrl(s3, command, { expiresIn });
+
+  //  Save in cache 
+  cachePresignedUrl(cacheKey, url, expiresIn);
+
+  return url;
 }
 
 // Upload buffer to S3

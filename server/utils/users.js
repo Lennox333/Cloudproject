@@ -8,10 +8,10 @@ import {
 import { getConfig } from "./envManager.js"; // Import the config object
 import { cognitoClient } from "./cognitoClient.js";
 import { createHmac } from "crypto";
+import { cacheAdminStatus, getCachedAdminStatus } from "./cache.js";
 
 const { COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID } =
   await getConfig();
-
 
 function calculateSecretHash(username) {
   const message = username + COGNITO_CLIENT_ID;
@@ -71,17 +71,31 @@ async function logoutUser(accessToken) {
 
 async function isAdmin(user) {
   try {
+    //  Check cache first
+    const cached = getCachedAdminStatus(user.username);
+    if (cached !== null) {
+      return cached
+        ? { success: true }
+        : { success: false, error: "Admin access required" };
+    }
+
+    // Ask Cognito if not cached
     const command = new AdminListGroupsForUserCommand({
       UserPoolId: USER_POOL_ID,
       Username: user.username,
     });
     const response = await cognitoClient.send(command);
     const groups = response.Groups.map((g) => g.GroupName);
-    if (groups.includes("Admin")) {
-      return { success: true };
-    } else {
-      return { success: false, error: "Admin access required" };
-    }
+
+    const success = groups.includes("Admin");
+
+    // Save result to cache (5 min by default)
+    cacheAdminStatus(user.username, success);
+
+    // Return result
+    return success
+      ? { success: true }
+      : { success: false, error: "Admin access required" };
   } catch (err) {
     console.error("Error checking admin group:", err);
     return { success: false, error: "Server error" };
