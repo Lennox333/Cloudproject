@@ -26,6 +26,7 @@ const PARAMETERS = {
   S3_BUCKET: process.env.S3_BUCKET_PARAM,
   USER_POOL_ID: process.env.USER_POOL_ID_PARAM,
   DYNAMO_TABLE: process.env.DYNAMO_TABLE,
+  MEMECACHE: process.env.MEMECACHE_PARAM
 };
 
 // Secrets Manager name from env

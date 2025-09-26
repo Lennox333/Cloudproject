@@ -32,6 +32,7 @@ resource "aws_instance" "backend_ec2" {
                 -e S3_BUCKET_PARAM=/n11772891/s3_bucket \
                 -e USER_POOL_ID_PARAM=/n11772891/user_pool_id \
                 -e DYNAMO_TABLE_PARAM=/n11772891/dynamo_table \
+                -e MEMECACHE_PARAM:/n11772891/memecache  \
                 -e COGNITO_SECRET_NAME=n11772891-cognito-secrets \
                 -e AWS_REGION=ap-southeast-2 \
                 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
