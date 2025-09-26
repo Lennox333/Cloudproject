@@ -11,6 +11,19 @@ test rds aws, and remember tochange env in database.js
 
 queue the ffmpeg trancoding
 
+create ami from app2 to prevent docker 
+
+sudo apt install unzip
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+clear all docker stuff from ec2, then make ami, then update launch_template
+
+
+ubuntu@ip-172-31-119-167:~$ docker ps
+permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.47/containers/json": dial unix /var/run/docker.sock: connect: permission denied
+
  aws ec2 describe-key-pairs \
           --key-names n11547413-New-Key-Pair \
           --include-public-key \
