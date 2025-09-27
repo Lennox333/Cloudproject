@@ -188,7 +188,7 @@ app.post("/start-encode", authenticateToken, async (req, res) => {
 
 app.post("/transcodetest", async (req, res) => {
   const { videoId, s3Key, title, description } = req.body;
-  if (!videoId || !s3Key || !title)
+  if (!videoId || !s3Key)
     return res.status(400).json({ error: "Missing data" });
 
   res.status(200).json({

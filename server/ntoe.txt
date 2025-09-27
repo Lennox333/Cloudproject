@@ -118,11 +118,9 @@ AWSURL="ec2-13-211-139-99.ap-southeast-2.compute.amazonaws.com"
 
 curl -X POST http://$AWSURL:5000/transcodetest \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
   -d "{
     \"videoId\": \"$VIDEO_ID\",
-    \"s3Key\": \"$S3_KEY\",
-    \"title\": \"$TITLE\"  }"
+    \"s3Key\": \"$S3_KEY\" }"
 
 
 curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4_720p.mp4"
