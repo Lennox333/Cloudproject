@@ -2,9 +2,9 @@ import Memcached from "memcached";
 import util from "node:util";
 import { getConfig } from "./envManager";
 
-const { MEMECACHE } = await getConfig();
+const { MEMECACHE_ADDR } = await getConfig();
 
-const memcached = new Memcached(MEMECACHE);
+const memcached = new Memcached(MEMECACHE_ADDR);
 memcached.aGet = util.promisify(memcached.get);
 memcached.aSet = util.promisify(memcached.set);
 
