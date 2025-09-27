@@ -6,34 +6,31 @@ import {
 
 // AWS region
 // const AWS_REGION = "ap-southeast-2";
+const AWS_REGION = process.env.AWS_REGION || "ap-southeast-2";
 
 // Parameter names (const outside the function)
-// const PARAMETERS = {
-//   PURPOSE: "/n11772891/purpose",
-//   QUT_USERNAME: "/n11772891/qut_username",
-//   S3_BUCKET: "/n11772891/s3_bucket",
-//   USER_POOL_ID: "/n11772891/user_pool_id",
-//   DYNAMO_TABLE: "n11772891/dynamo_table"
-// };
-
-// // Secrets Manager name
-// const SECRETS_MANAGER_NAME = "n11772891-cognito-secrets";
-
-// Load config from environment variables
 const PARAMETERS = {
-  PURPOSE: process.env.PURPOSE_PARAM,
-  QUT_USERNAME: process.env.QUT_USERNAME_PARAM,
-  S3_BUCKET: process.env.S3_BUCKET_PARAM,
-  USER_POOL_ID: process.env.USER_POOL_ID_PARAM,
-  DYNAMO_TABLE: process.env.DYNAMO_TABLE,
-  MEMECACHE_ADDR: process.env.MEMECACHE_PARAM
+  PURPOSE: "/n11772891/purpose",
+  QUT_USERNAME: "/n11772891/qut_username",
+  S3_BUCKET: "/n11772891/s3_bucket",
+  USER_POOL_ID: "/n11772891/user_pool_id",
+  DYNAMO_TABLE: "n11772891/dynamo_table",
+  MEMECACHE_ADDR: "/n11772891/memecache",
 };
 
-// Secrets Manager name from env
-const SECRETS_MANAGER_NAME = process.env.COGNITO_SECRET_NAME;
+// Load config from environment variables
+// const PARAMETERS = {
+//   PURPOSE: process.env.PURPOSE_PARAM,
+//   QUT_USERNAME: process.env.QUT_USERNAME_PARAM,
+//   S3_BUCKET: process.env.S3_BUCKET_PARAM,
+//   USER_POOL_ID: process.env.USER_POOL_ID_PARAM,
+//   DYNAMO_TABLE: process.env.DYNAMO_TABLE,
+//   MEMECACHE_ADDR: process.env.MEMECACHE_PARAM
+// };
 
-// AWS region from env
-const AWS_REGION = process.env.AWS_REGION;
+// Secrets Manager name from env
+const SECRETS_MANAGER_NAME =
+  process.env.COGNITO_SECRET_NAME || "n11772891-cognito-secrets";
 
 // AWS SDK Clients
 const ssmClient = new SSMClient({ region: AWS_REGION });
