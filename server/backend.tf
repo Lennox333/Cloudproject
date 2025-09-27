@@ -43,3 +43,21 @@ resource "aws_instance" "backend_ec2" {
 
 
 }
+
+
+# ----------------------------
+# Route53 DNS Record
+# ----------------------------
+data "aws_route53_zone" "main" {
+  name         = "cab432.com"
+  private_zone = false
+}
+
+resource "aws_route53_record" "backend_record" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "n11772891.cab432.com"
+  type    = "CNAME"
+  ttl     = 300
+
+  records = [aws_instance.backend_ec2.public_dns]
+}

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# username="$1"
-# password="$2"
+username="$1"
+password="$2"
 
-username="ln607090"
-password="TestPassword123!"
+# username="ln607090"
+# password="TestPassword123!"
 
 # Login and save access token
 ACCESS_TOKEN=$(curl -s -c cookies.txt \
