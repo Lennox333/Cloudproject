@@ -61,9 +61,10 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
   const cacheKey = `${operation}:${key}`;
 
   //  Check cache first
-  const cachedUrl = getCachedPresignedUrl(cacheKey);
-  // if (cachedUrl) return cachedUrl;
-  console.log("##################presignedurl", cachedUrl)
+  const cachedUrl = await getCachedPresignedUrl(cacheKey);
+  console.log("##################presignedurl", cachedUrl);
+
+  if (cachedUrl) return cachedUrl;
   //  Create the command
   let command;
   if (operation === "getObject") {
@@ -77,7 +78,7 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
   //  Generate signed URL
   const url = await getSignedUrl(s3, command, { expiresIn });
 
-  //  Save in cache 
+  //  Save in cache
   cachePresignedUrl(cacheKey, url, expiresIn);
 
   return url;
