@@ -76,7 +76,7 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
   -d '{"username":"ln607090","password":"TestPassword123!"}' | jq -r '.accessToken')
 
 
-RESPONSE=$(curl -s -X POST http://ec2-54-252-39-141.ap-southeast-2.compute.amazonaws.com:5000/get-upload-url \
+RESPONSE=$(curl -s -X POST http://$AWSURL:5000/get-upload-url \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"filename":"example.mp4","title":"Test Video"}')

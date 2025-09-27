@@ -151,7 +151,7 @@ app.get("/get-video-url-test", async (req, res) => {
   const { videoId, resolution = "720p" } = req.query; // get from query string
   if (!videoId) return res.status(400).json({ error: "videoId is required" });
 
-  const s3Key = `videos/${videoId}`;
+  const s3Key = `videos/${videoId}_${resolution}.mp4`;
 
   try {
     const url = await getPresignedUrl(s3Key, 3600, "getObject"); // generate download URL
@@ -211,7 +211,7 @@ app.get("/thumbnails/:videoId", async (req, res) => {
   }
   const thumbnailKey = `thumbnails/${videoId}.jpg`;
   const thumbnailUrl = await getPresignedUrl(thumbnailKey, 3600, "getObject");
-  res.status(200).redirect({ thumbnailUrl });
+  res.status(200).json({ thumbnailUrl });
 });
 
 app.get("/video/:id/stream", async (req, res) => {
