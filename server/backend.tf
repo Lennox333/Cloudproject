@@ -54,7 +54,7 @@ data "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "backend_record" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = "Z02680423BHWEVRU2JZDQ"
   name    = "n11772891.cab432.com"
   type    = "CNAME"
   ttl     = 300
