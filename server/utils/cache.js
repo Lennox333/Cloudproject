@@ -1,6 +1,6 @@
 import Memcached from "memcached";
 import util from "node:util";
-import { getConfig } from "./envManager";
+import { getConfig } from "./envManager.js";
 
 const { MEMECACHE_ADDR } = await getConfig();
 
