@@ -62,8 +62,8 @@ async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
 
   //  Check cache first
   const cachedUrl = getCachedPresignedUrl(cacheKey);
-  if (cachedUrl) return cachedUrl;
-  console.log("presignedurl", cachedUrl)
+  // if (cachedUrl) return cachedUrl;
+  console.log("##################presignedurl", cachedUrl)
   //  Create the command
   let command;
   if (operation === "getObject") {
