@@ -2,8 +2,9 @@ import Memcached from "memcached";
 import util from "node:util";
 import { getConfig } from "./envManager.js";
 
-const { MEMECACHE_ADDR } = await getConfig();
+// const { MEMECACHE_ADDR } = await getConfig();
 
+const MEMECACHE_ADDR = "a2-gr41.km2jzi.cfg.apse2.cache.amazonaws.com:11211"
 const memcached = new Memcached(MEMECACHE_ADDR);
 memcached.aGet = util.promisify(memcached.get);
 memcached.aSet = util.promisify(memcached.set);
