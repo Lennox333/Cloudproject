@@ -14,7 +14,7 @@ const PARAMETERS = {
   QUT_USERNAME: "/n11772891/qut_username",
   S3_BUCKET: "/n11772891/s3_bucket",
   USER_POOL_ID: "/n11772891/user_pool_id",
-  DYNAMO_TABLE: "n11772891/dynamo_table",
+  DYNAMO_TABLE: "/n11772891/dynamo_table",
   MEMECACHE_ADDR: "/n11772891/memecache",
 };
 
