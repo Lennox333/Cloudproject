@@ -118,14 +118,17 @@ app.post("/logout", async (req, res) => {
     res.status(500).json({ error: "Failed to log out" });
   }
 });
+
+app.post("/profile", authenticateToken, async (req, res) => {
+  res.status(200).json({
+    userId: req.user.userId,
+    username: req.user.username
+  });
+});
+
 // ## VIDEOS
 
 app.post("/get-upload-url", authenticateToken, async (req, res) => {
-  const { filename, title } = req.body;
-
-  if (!filename || !title)
-    return res.status(400).json({ error: "Filename and title required" });
-
   const videoId = randomUUID();
   const s3Key = `videos/${videoId}`;
 
