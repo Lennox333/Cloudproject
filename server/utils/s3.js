@@ -11,6 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
 import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
 import { AWS_REGION, BUCKET, PURPOSE, QUT_USERNAME } from "./secretManager.js";
+import { cachedFetch, invalidateCache } from "./cache.js";
 
 // const s3 = new S3Client({
 //   region: AWS_REGION,
@@ -56,18 +57,25 @@ async function createIfNotExist() {
   }
 }
 
-// Generate pre-signed URL
+// Generate pre-signed URL with caching
 async function getPresignedUrl(key, expiresIn = 3600, operation = "getObject") {
-  let command;
-  if (operation === "getObject") {
-    command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-  } else if (operation === "putObject") {
-    command = new PutObjectCommand({ Bucket: BUCKET, Key: key });
-  } else {
-    throw new Error("Invalid operation");
-  }
+  const cacheKey = `presignedUrl:${key}:${expiresIn}:${operation}`;
 
-  return getSignedUrl(s3, command, { expiresIn });
+  return await cachedFetch(
+    cacheKey,
+    async () => {
+      let command;
+      if (operation === "getObject") {
+        command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+      } else if (operation === "putObject") {
+        command = new PutObjectCommand({ Bucket: BUCKET, Key: key });
+      } else {
+        throw new Error("Invalid operation");
+      }
+      return getSignedUrl(s3, command, { expiresIn });
+    },
+    expiresIn // TTL for the cache entry
+  );
 }
 
 // Upload buffer to S3
@@ -95,6 +103,7 @@ async function deleteVideoFiles(video) {
     for (const key of keysToDelete) {
       await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
       console.log("Deleted S3 object:", key);
+      invalidateCache(`presignedUrl:${key}:3600:getObject`); // Invalidate cache for pre-signed URLs
     }
 
     return { success: true };
