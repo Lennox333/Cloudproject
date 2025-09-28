@@ -1,3 +1,6 @@
-curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "http://$AWSURL:$PORT/profile"
+curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+	"http://$AWSURL:$PORT/profile" | jq
 
-curl -s -X DELETE "http://$AWSURL:$PORT/video/$1" -H "Authorization: Bearer $ACCESS_TOKEN"
+
+curl -s -X DELETE "http://$AWSURL:$PORT/video/$1" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | jq

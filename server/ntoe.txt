@@ -73,7 +73,7 @@ curl -X POST http://ec2-3-27-206-106.ap-southeast-2.compute.amazonaws.com:5000/c
 
   TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"ln607090","password":"TestPassword123!"}' | jq -r '.accessToken')
+  -d '{"username":"ln84179","password":"Password123!"}' | jq -r '.accessToken')
 
 
 RESPONSE=$(curl -s -X POST http://$AWSURL:5000/get-upload-url \
@@ -134,3 +134,13 @@ curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
     "username": "ln84179",
     "confirmationCode": "202574"
   }'
+
+
+  TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ln84179","password":"Password123!"}' | jq -r '.accessToken')
+
+
+
+curl -s -X DELETE "http://$AWSURL:5000/video/" \
+  -H "Authorization: Bearer $TOKEN" | jq
