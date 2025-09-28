@@ -37,6 +37,9 @@ resource "aws_instance" "backend_ec2" {
                 -e AWS_REGION=ap-southeast-2 \
                 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
               EOF
+  lifecycle {
+      ignore_changes = [tags]
+    }
 
 
 }
