@@ -73,9 +73,10 @@ async function isAdmin(user) {
   try {
     //  Check cache first
     const cached = getCachedAdminStatus(user.username);
+    console.log("chaced", cached)
     if (cached !== null) {
       return cached
-        ? { success: cached }
+        ? { success: true }
         : { success: false, error: "Admin access required" };
     }
 
@@ -94,7 +95,7 @@ async function isAdmin(user) {
 
     // Return result
     return success
-      ? { success: cached }
+      ? { success: true }
       : { success: false, error: "Admin access required" };
   } catch (err) {
     console.error("Error checking admin group:", err);

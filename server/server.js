@@ -301,6 +301,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
       console.log("not owner")
       // Not owner -> check admin
       const adminCheck = await isAdmin(req.user);
+      console.log("is admin ###", adminCheck)
       if (!adminCheck.success) {
         return res.status(403).json({ error: adminCheck.error });
       }

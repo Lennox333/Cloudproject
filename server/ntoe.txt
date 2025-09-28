@@ -142,5 +142,5 @@ curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
 
 
 
-curl -s -X DELETE "http://$AWSURL:5000/video/" \
+curl -s -X DELETE "http://$AWSURL:5000/video/e7795a51-2742-42ea-9d41-39739e13e5f4" \
   -H "Authorization: Bearer $TOKEN" | jq
