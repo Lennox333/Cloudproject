@@ -120,7 +120,7 @@ async function deleteVideoFiles(videoId) {
       `videos/${videoId}_480p.mp4`,
       `videos/${videoId}_720p.mp4`,
       `videos/${videoId}`,
-      `thumbnails/${videoId}.jpg/`,
+      `thumbnails/${videoId}.jpg`,
     ];
 
     for (const key of keysToDelete) {

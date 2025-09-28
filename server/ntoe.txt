@@ -146,3 +146,10 @@ curl -s -X DELETE "http://$AWSURL:5000/video/e7795a51-2742-42ea-9d41-39739e13e5f
   -H "Authorization: Bearer $TOKEN" | jq
 
 register ln60711 Password123! ln1607090@gmail.com
+
+
+login ln84179 Password123!
+login n1177 Password123!
+login ln60711 Password123!
+
+
