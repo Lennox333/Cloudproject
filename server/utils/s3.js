@@ -119,6 +119,7 @@ async function deleteVideoFiles(videoId) {
       `videos/${videoId}_360p.mp4`,
       `videos/${videoId}_480p.mp4`,
       `videos/${videoId}_720p.mp4`,
+      `videos/${videoId}.mp4`,
       `thumbnails/${videoId}.jpg/`,
     ];
 
