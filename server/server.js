@@ -305,7 +305,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
       }
     }
 
-    const result = await deleteVideo(video.videoId);
+    const result = await deleteVideo(req.user.userId, video.videoId);
     if (result.error) return res.status(500).json({ error: result.error });
 
     res

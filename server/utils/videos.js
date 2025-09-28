@@ -190,12 +190,15 @@ async function fetchVideos({
 }
 
 // Delete a video from DynamoDB
-async function deleteUserVideo(videoId) {
+async function deleteUserVideo(userId, videoId) { 
   try {
     await docClient.send(
       new DeleteCommand({
         TableName: DYNAMO_TABLE,
-        Key: { video_id: videoId },
+        Key: { 
+          user_id: userId,      // Partition key (required)
+          video_id: videoId     // Sort key (required)
+        },
       })
     );
     return { success: true, message: `Deleted ${videoId}` };
@@ -204,11 +207,10 @@ async function deleteUserVideo(videoId) {
     return { error: "Failed to delete video" };
   }
 }
-
 // Delete video from Dynamo and associated S3 files
-async function deleteVideo(videoId) {
+async function deleteVideo(userId, videoId) {
   try {
-    const dbResult = await deleteUserVideo(videoId);
+    const dbResult = await deleteUserVideo(userId, videoId);
     if (dbResult.error)
       return { success: false, error: "Failed to delete video from database" };
 
