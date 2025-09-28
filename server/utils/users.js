@@ -31,9 +31,30 @@ async function registerUser(username, password, email) {
       UserAttributes: [{ Name: "email", Value: email }],
     });
     const response = await cognitoClient.send(command);
+    
+    // Add user to Standard group after successful registration
+    await addUserToGroup(username, "Standard");
+    
     return { message: "User registered. Confirm email to activate.", response };
   } catch (err) {
     console.error("Cognito error:", err);
+    return { error: err.message };
+  }
+}
+
+
+async function addUserToGroup(username, groupName) {
+  try {
+    const command = new AdminAddUserToGroupCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: username,
+      GroupName: groupName,
+    });
+    await cognitoClient.send(command);
+    console.log(`User ${username} added to ${groupName} group`);
+    return { success: true };
+  } catch (err) {
+    console.error(`Error adding user to ${groupName} group:`, err);
     return { error: err.message };
   }
 }

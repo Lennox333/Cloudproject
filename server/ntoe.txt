@@ -131,8 +131,8 @@ curl -X GET http://$AWSURL:5000/thumbnails/e7795a51-2742-42ea-9d41-39739e13e5f4
 curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "ln84179",
-    "confirmationCode": "202574"
+    "username": "ln60711",
+    "confirmationCode": "467087"
   }'
 
 
@@ -144,3 +144,5 @@ curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
 
 curl -s -X DELETE "http://$AWSURL:5000/video/e7795a51-2742-42ea-9d41-39739e13e5f4" \
   -H "Authorization: Bearer $TOKEN" | jq
+
+register ln60711 Password123! ln1607090@gmail.com

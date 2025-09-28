@@ -4,7 +4,7 @@ set -euo pipefail
 # Usage: ./register.sh <username> <password> <email>
 if [ $# -ne 3 ]; then
   echo "Usage: $0 <username> <password> <email>"
-  exit 1
+  return
 fi
 
 username="$1"

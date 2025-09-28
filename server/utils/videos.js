@@ -190,28 +190,48 @@ async function fetchVideos({
 }
 
 // Delete a video from DynamoDB
-async function deleteUserVideo(userId, videoId) { 
+async function deleteUserVideo(videoId) {
   try {
-    const log = await docClient.send(
+    // First, query the GSI to find which user owns this video
+    const queryResult = await docClient.send(
+      new QueryCommand({
+        TableName: DYNAMO_TABLE,
+        IndexName: "VideoIdIndex",
+        KeyConditionExpression: "video_id = :videoId",
+        ExpressionAttributeValues: {
+          ":videoId": videoId
+        }
+      })
+    );
+    
+    if (queryResult.Items.length === 0) {
+      return { error: "Video not found" };
+    }
+    
+    // Get the user_id from the query result
+    const userId = queryResult.Items[0].user_id;
+    
+    // Now delete with both keys
+    await docClient.send(
       new DeleteCommand({
         TableName: DYNAMO_TABLE,
         Key: { 
-          user_id: userId,      // Partition key (required)
-          video_id: videoId     // Sort key (required)
+          user_id: userId,
+          video_id: videoId
         },
       })
     );
-    console.log(log)
-    return { success: true, message: `Deleted ${videoId}` };
+    
+    return { success: true, message: `Deleted video ${videoId}` };
   } catch (err) {
     console.error("DynamoDB deleteUserVideo error:", err);
     return { error: "Failed to delete video" };
   }
 }
 // Delete video from Dynamo and associated S3 files
-async function deleteVideo(userId, videoId) {
+async function deleteVideo(videoId) {
   try {
-    const dbResult = await deleteUserVideo(userId, videoId);
+    const dbResult = await deleteUserVideo(videoId);
     if (dbResult.error)
       return { success: false, error: "Failed to delete video from database" };
 

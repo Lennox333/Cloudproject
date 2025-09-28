@@ -122,7 +122,7 @@ app.post("/logout", async (req, res) => {
 app.get("/profile", authenticateToken, async (req, res) => {
   res.status(200).json({
     userId: req.user.userId,
-    username: req.user.username
+    username: req.user.username,
   });
 });
 
@@ -305,7 +305,7 @@ app.delete("/video/:videoId", authenticateToken, async (req, res) => {
       }
     }
 
-    const result = await deleteVideo(req.user.userId, video.videoId);
+    const result = await deleteVideo(video.videoId);
     if (result.error) return res.status(500).json({ error: result.error });
 
     res
