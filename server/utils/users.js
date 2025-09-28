@@ -72,7 +72,7 @@ async function logoutUser(accessToken) {
 async function isAdmin(user) {
   try {
     //  Check cache first
-    const cached = getCachedAdminStatus(user.username);
+    const cached = await getCachedAdminStatus(user.username);
     console.log("chaced", cached)
     if (cached !== null) {
       return cached
