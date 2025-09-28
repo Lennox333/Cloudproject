@@ -73,26 +73,6 @@ async function getVideoById(videoId) {
   }
 }
 
-// Add or update video thumbnail
-async function addVideoThumbnail(videoId, thumbnailKey) {
-  try {
-    const video = await getVideoById(videoId);
-    if (!video || !video.userId) return { error: "Video not found" };
-
-    const params = {
-      TableName: DYNAMO_TABLE,
-      Key: { user_id: video.userId, video_id: video.videoId },
-      UpdateExpression: "SET thumbnail_key = :thumbnail",
-      ExpressionAttributeValues: { ":thumbnail": thumbnailKey },
-    };
-
-    await docClient.send(new UpdateCommand(params));
-    return { message: "Thumbnail updated successfully" };
-  } catch (err) {
-    console.error("DynamoDB addVideoThumbnail error:", err);
-    return { error: "Failed to update thumbnail" };
-  }
-}
 
 // Update video status
 async function updateVideoStatus(videoId, status) {
@@ -248,7 +228,6 @@ async function deleteVideo(videoId) {
 export {
   saveUserVideo,
   getVideoById,
-  addVideoThumbnail,
   updateVideoStatus,
   deleteVideo,
   fetchVideos,

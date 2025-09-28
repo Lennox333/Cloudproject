@@ -31,17 +31,16 @@ async function registerUser(username, password, email) {
       UserAttributes: [{ Name: "email", Value: email }],
     });
     const response = await cognitoClient.send(command);
-    
+
     // Add user to Standard group after successful registration
     await addUserToGroup(username, "Standard");
-    
+
     return { message: "User registered. Confirm email to activate.", response };
   } catch (err) {
     console.error("Cognito error:", err);
     return { error: err.message };
   }
 }
-
 
 async function addUserToGroup(username, groupName) {
   try {
@@ -59,6 +58,25 @@ async function addUserToGroup(username, groupName) {
   }
 }
 
+// async function loginUser(username, password) {
+//   const secretHash = calculateSecretHash(username);
+//   const command = new InitiateAuthCommand({
+//     AuthFlow: "USER_PASSWORD_AUTH",
+//     ClientId: COGNITO_CLIENT_ID,
+//     AuthParameters: {
+//       USERNAME: username,
+//       PASSWORD: password,
+//       SECRET_HASH: secretHash,
+//     },
+//   });
+//   const response = await cognitoClient.send(command);
+//   return {
+//     idToken: response.AuthenticationResult.IdToken,
+//     accessToken: response.AuthenticationResult.AccessToken,
+//     refreshToken: response.AuthenticationResult.RefreshToken,
+//   };
+// }
+
 async function loginUser(username, password) {
   const secretHash = calculateSecretHash(username);
   const command = new InitiateAuthCommand({
@@ -70,12 +88,32 @@ async function loginUser(username, password) {
       SECRET_HASH: secretHash,
     },
   });
+
   const response = await cognitoClient.send(command);
+
+  if (!response.ChallengeName || !response.Session) {
+    throw new Error("Expected MFA challenge but did not receive one.");
+  }
+
+  // MFA session
   return {
-    idToken: response.AuthenticationResult.IdToken,
-    accessToken: response.AuthenticationResult.AccessToken,
-    refreshToken: response.AuthenticationResult.RefreshToken,
+    challengeName: response.ChallengeName, // will be "SMS_MFA" even for email
+    session: response.Session,
   };
+}
+
+async function confirmEmailMfa(username, code, session) {
+  const command = new RespondToAuthChallengeCommand({
+    ClientId: COGNITO_CLIENT_ID,
+    ChallengeName: "SMS_MFA", // for built-in MFA (email or SMS)
+    Session: session,
+    ChallengeResponses: {
+      USERNAME: username,
+      SMS_MFA_CODE: code, // code sent to user email
+    },
+  });
+
+  return await cognitoClient.send(command);
 }
 
 async function logoutUser(accessToken) {
@@ -141,4 +179,11 @@ async function confirmRegistration(username, confirmationCode) {
   }
 }
 
-export { registerUser, loginUser, logoutUser, isAdmin, confirmRegistration };
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  isAdmin,
+  confirmRegistration,
+  confirmEmailMfa,
+};

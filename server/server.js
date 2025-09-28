@@ -11,6 +11,7 @@ import {
   logoutUser,
   registerUser,
   confirmRegistration,
+  confirmEmailMfa
 } from "./utils/users.js";
 import {
   deleteVideo,
@@ -72,6 +73,38 @@ app.post("/confirm-registration", async (req, res) => {
   }
 });
 
+app.post("/confirm-login", async (req, res) => {
+  const { username, code, session } = req.body;
+
+  if (!username || !code || !session) {
+    return res
+      .status(400)
+      .json({ error: "Username, code, and session are required" });
+  }
+
+  try {
+    const response = await confirmEmailMfa(username, code, session);
+
+    res.cookie("token", response.AuthenticationResult.AccessToken, {
+      httpOnly: true,
+      secure: false,
+      maxAge: 3 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: "Email MFA confirmed",
+      idToken: response.AuthenticationResult.IdToken,
+      accessToken: response.AuthenticationResult.AccessToken,
+      refreshToken: response.AuthenticationResult.RefreshToken,
+    });
+  } catch (err) {
+    console.error("Email MFA confirm error:", err);
+    res.status(400).json({ error: "Invalid email code or session expired" });
+  }
+});
+
+
+
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -80,24 +113,19 @@ app.post("/login", async (req, res) => {
   }
 
   try {
-    // Authenticate with Cognito
-    const tokens = await loginUser(username, password);
-
-    res.cookie("token", tokens.accessToken, {
-      httpOnly: true,
-      secure: false,
-      maxAge: 3 * 60 * 60 * 1000, // 3 hours
-    });
+    const result = await loginUser(username, password);
 
     res.status(200).json({
-      message: "Login successful",
-      ...tokens, // idToken, accessToken, refreshToken
+      message: "Email MFA required",
+      challengeName: result.challengeName,
+      session: result.session,
     });
   } catch (err) {
     console.error("Cognito login error:", err);
     res.status(400).json({ error: "Invalid username or password" });
   }
 });
+
 
 app.post("/logout", async (req, res) => {
   try {
