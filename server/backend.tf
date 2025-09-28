@@ -26,20 +26,17 @@ resource "aws_instance" "backend_ec2" {
 
               # Pull and run backend container
               docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
-              docker run -d -p 5000:5000 \
+              docker run -d --restart unless-stopped -p 5000:5000 \
                 -e PURPOSE_PARAM=/n11772891/purpose \
                 -e QUT_USERNAME_PARAM=/n11772891/qut_username \
                 -e S3_BUCKET_PARAM=/n11772891/s3_bucket \
                 -e USER_POOL_ID_PARAM=/n11772891/user_pool_id \
                 -e DYNAMO_TABLE_PARAM=/n11772891/dynamo_table \
-                -e MEMECACHE_PARAM:/n11772891/memecache  \
+                -e MEMECACHE_PARAM=/n11772891/memecache \
                 -e COGNITO_SECRET_NAME=n11772891-cognito-secrets \
                 -e AWS_REGION=ap-southeast-2 \
                 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
               EOF
-    tags = {
-        Name = "n11772891_Backend1"
-    }
 
 
 }
