@@ -192,7 +192,7 @@ async function fetchVideos({
 // Delete a video from DynamoDB
 async function deleteUserVideo(userId, videoId) { 
   try {
-    await docClient.send(
+    const log = await docClient.send(
       new DeleteCommand({
         TableName: DYNAMO_TABLE,
         Key: { 
@@ -201,6 +201,7 @@ async function deleteUserVideo(userId, videoId) {
         },
       })
     );
+    console.log(log)
     return { success: true, message: `Deleted ${videoId}` };
   } catch (err) {
     console.error("DynamoDB deleteUserVideo error:", err);
