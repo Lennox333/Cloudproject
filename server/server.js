@@ -119,7 +119,7 @@ app.post("/logout", async (req, res) => {
   }
 });
 
-app.post("/profile", authenticateToken, async (req, res) => {
+app.get("/profile", authenticateToken, async (req, res) => {
   res.status(200).json({
     userId: req.user.userId,
     username: req.user.username

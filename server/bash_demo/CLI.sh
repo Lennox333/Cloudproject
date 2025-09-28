@@ -19,32 +19,32 @@ while true; do
 
 		;;
 	logout)
-		./usr_logout.sh
+		source ./usr_logout.sh
 		echo
 
 		;;
 	register)
-		./usr_register.sh "${argArray[@]}"
-
+		source ./usr_register.sh "${argArray[@]}"
+		echo
 		;;
 	videos-fetch)
-		./fetch_videos.sh "${argArray[@]}"
+		source ./fetch_videos.sh "${argArray[@]}"
 		echo
 		;;
 	upload)
-		./upload.sh "${argArray[@]}"
+		source ./upload.sh "${argArray[@]}"
 		echo
 		;;
 	thumbnail-url)
-		./get_thumbnail_url.sh "${argArray[@]}"
+		source ./get_thumbnail_url.sh "${argArray[@]}"
 		echo
 		;;
 	watch)
-		./video_watch.sh "${argArray[@]}"
+		source ./video_watch.sh "${argArray[@]}"
 		echo
 		;;
 	delete)
-		./video_del.sh "${argArray[@]}"
+		source ./video_del.sh "${argArray[@]}"
 		echo
 		;;
 
