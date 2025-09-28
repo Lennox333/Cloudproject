@@ -73,7 +73,6 @@ async function isAdmin(user) {
   try {
     //  Check cache first
     const cached = await getCachedAdminStatus(user.username);
-    console.log("chaced", cached)
     if (cached !== null) {
       return cached
         ? { success: true }
