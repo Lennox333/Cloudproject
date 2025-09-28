@@ -73,11 +73,13 @@ async function isAdmin(user) {
   try {
     //  Check cache first
     const cached = await getCachedAdminStatus(user.username);
+    console.log(cached)
     if (cached !== null) {
       return cached
         ? { success: true }
         : { success: false, error: "Admin access required" };
     }
+
 
     // Ask Cognito if not cached
     const command = new AdminListGroupsForUserCommand({
