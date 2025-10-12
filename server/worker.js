@@ -6,7 +6,7 @@ import {
 import { spawn } from "child_process";
 import { PassThrough } from "stream";
 import { getPresignedUrl, uploadToS3Multipart } from "./utils/s3.js";
-import { updateVideoStatus, getVideoById } from "./utils/videos.js";
+import { updateVideoStatus } from "./utils/videos.js";
 
 const sqsClient = new SQSClient({ region: process.env.AWS_REGION });
 const QUEUE_URL = process.env.SQS_QUEUE_URL;

@@ -11,8 +11,8 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Install AWS SDK
-RUN npm install aws-sdk
+# # Install AWS SDK
+# RUN npm install aws-sdk
 
 # Copy everything else
 COPY . .
