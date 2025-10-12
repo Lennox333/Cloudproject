@@ -188,18 +188,21 @@ app.post("/start-encode", authenticateToken, async (req, res) => {
     videoId,
     title,
     description: description || null,
+    status: "processing", // Make sure status is set to processing
   });
 
   if (result.error) {
     return res.status(500).json(result);
   }
 
+  // No longer calling transcodeAndUpload here!
+  // The Lambda function will detect the S3 upload and trigger processing automatically
+  
   res.status(200).json({
-    message: "Upload confirmed, transcoding started",
+    message: "Upload confirmed. Video processing will begin automatically.",
     videoId,
+    status: "processing"
   });
-
-  transcodeAndUpload(videoId, s3Key); // async background task
 });
 
 
