@@ -15,6 +15,7 @@ const receiveMessages = async () => {
     const command = new ReceiveMessageCommand(params);
     const response = await sqsClient.send(command);
 
+    console.log(response)
     if (!response.Messages || response.Messages.length === 0) {
       console.log("No messages available in queue.");
       return;
