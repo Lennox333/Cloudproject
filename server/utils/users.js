@@ -104,7 +104,7 @@ async function loginUser(username, password) {
 }
 
 async function confirmEmailMfa(username, code, session) {
-  
+  const secretHash = calculateSecretHash(username);
   const command = new RespondToAuthChallengeCommand({
     ClientId: COGNITO_CLIENT_ID,
     ChallengeName: "SMS_MFA", // for built-in MFA (email or SMS)
@@ -112,6 +112,7 @@ async function confirmEmailMfa(username, code, session) {
     ChallengeResponses: {
       USERNAME: username,
       SMS_MFA_CODE: code, // code sent to user email
+      SECRET_HASH: secretHash, 
     },
   });
 
