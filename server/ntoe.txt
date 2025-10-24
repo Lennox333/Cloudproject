@@ -9,9 +9,9 @@ curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
     "confirmationCode": "467087"
   }'
 
-SESSION=$(curl -s -X POST http://$AWSURL:5000/login \
+TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"ln60711","password":"Password123!"}' | jq -r '.session')
+  -d '{"username":"ln60711","password":"Password123!"}' | jq -r '.accessToken')
 
 echo $SESSION
 
