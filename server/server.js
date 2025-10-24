@@ -106,7 +106,6 @@ app.post("/confirm-login", async (req, res) => {
 });
 
 
-
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -115,18 +114,47 @@ app.post("/login", async (req, res) => {
   }
 
   try {
+    // loginUser now returns tokens directly
     const result = await loginUser(username, password);
 
+    res.cookie("token", result.accessToken, {
+      httpOnly: true,
+      secure: false, // set true if using HTTPS
+      maxAge: 3 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
-      message: "Email MFA required",
-      challengeName: result.challengeName,
-      session: result.session,
+      message: "Login successful",
+      idToken: result.idToken,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     });
   } catch (err) {
     console.error("Cognito login error:", err);
     res.status(400).json({ error: "Invalid username or password" });
   }
 });
+
+// app.post("/login", async (req, res) => {
+//   const { username, password } = req.body;
+
+//   if (!username || !password) {
+//     return res.status(400).json({ error: "Username and password required" });
+//   }
+
+//   try {
+//     const result = await loginUser(username, password);
+
+//     res.status(200).json({
+//       message: "Email MFA required",
+//       challengeName: result.challengeName,
+//       session: result.session,
+//     });
+//   } catch (err) {
+//     console.error("Cognito login error:", err);
+//     res.status(400).json({ error: "Invalid username or password" });
+//   }
+// });
 
 
 app.post("/logout", async (req, res) => {

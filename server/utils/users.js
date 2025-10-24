@@ -59,25 +59,6 @@ async function addUserToGroup(username, groupName) {
   }
 }
 
-// async function loginUser(username, password) {
-//   const secretHash = calculateSecretHash(username);
-//   const command = new InitiateAuthCommand({
-//     AuthFlow: "USER_PASSWORD_AUTH",
-//     ClientId: COGNITO_CLIENT_ID,
-//     AuthParameters: {
-//       USERNAME: username,
-//       PASSWORD: password,
-//       SECRET_HASH: secretHash,
-//     },
-//   });
-//   const response = await cognitoClient.send(command);
-//   return {
-//     idToken: response.AuthenticationResult.IdToken,
-//     accessToken: response.AuthenticationResult.AccessToken,
-//     refreshToken: response.AuthenticationResult.RefreshToken,
-//   };
-// }
-
 async function loginUser(username, password) {
   const secretHash = calculateSecretHash(username);
   const command = new InitiateAuthCommand({
@@ -89,19 +70,38 @@ async function loginUser(username, password) {
       SECRET_HASH: secretHash,
     },
   });
-
   const response = await cognitoClient.send(command);
-
-  if (!response.ChallengeName || !response.Session) {
-    throw new Error("Expected MFA challenge but did not receive one.");
-  }
-
-  // MFA session
   return {
-    challengeName: response.ChallengeName, // will be "SMS_MFA" even for email
-    session: response.Session,
+    idToken: response.AuthenticationResult.IdToken,
+    accessToken: response.AuthenticationResult.AccessToken,
+    refreshToken: response.AuthenticationResult.RefreshToken,
   };
 }
+
+// async function loginUser(username, password) {
+//   const secretHash = calculateSecretHash(username);
+//   const command = new InitiateAuthCommand({
+//     AuthFlow: "USER_PASSWORD_AUTH",
+//     ClientId: COGNITO_CLIENT_ID,
+//     AuthParameters: {
+//       USERNAME: username,
+//       PASSWORD: password,
+//       SECRET_HASH: secretHash,
+//     },
+//   });
+
+//   const response = await cognitoClient.send(command);
+
+//   if (!response.ChallengeName || !response.Session) {
+//     throw new Error("Expected MFA challenge but did not receive one.");
+//   }
+
+//   // MFA session
+//   return {
+//     challengeName: response.ChallengeName, // will be "SMS_MFA" even for email
+//     session: response.Session,
+//   };
+// }
 
 async function confirmEmailMfa(username, code, session) {
   const secretHash = calculateSecretHash(username);
