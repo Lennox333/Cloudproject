@@ -76,6 +76,7 @@ app.post("/confirm-registration", async (req, res) => {
 app.post("/confirm-login", async (req, res) => {
   const { username, code, session } = req.body;
 
+  console.log(session)
   if (!username || !code || !session) {
     return res
       .status(400)
