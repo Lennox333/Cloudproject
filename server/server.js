@@ -84,7 +84,8 @@ app.post("/confirm-login", async (req, res) => {
 
   try {
     const response = await confirmEmailMfa(username, code, session);
-
+    console.log(response)
+    
     res.cookie("token", response.AuthenticationResult.AccessToken, {
       httpOnly: true,
       secure: false,
