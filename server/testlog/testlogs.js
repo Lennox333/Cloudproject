@@ -27,13 +27,13 @@ const receiveMessages = async () => {
       console.log("Body:", msg.Body);
 
       // Delete message after processing
-      await sqsClient.send(
-        new DeleteMessageCommand({
-          QueueUrl: QUEUE_URL,
-          ReceiptHandle: msg.ReceiptHandle,
-        })
-      );
-      console.log(`✅ Deleted message ${msg.MessageId}`);
+      // await sqsClient.send(
+      //   new DeleteMessageCommand({
+      //     QueueUrl: QUEUE_URL,
+      //     ReceiptHandle: msg.ReceiptHandle,
+      //   })
+      // );
+      // console.log(`✅ Deleted message ${msg.MessageId}`);
     }
   } catch (err) {
     console.error("Error receiving messages:", err);

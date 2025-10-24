@@ -1,5 +1,5 @@
 
-AWSURL="ec2-3-25-70-215.ap-southeast-2.compute.amazonaws.com"
+AWSURL="ec2-3-104-224-4.ap-southeast-2.compute.amazonaws.com"
 
 
 curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
