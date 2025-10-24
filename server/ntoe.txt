@@ -1,14 +1,44 @@
-register
-login
-upload
-video view: 16-end
-cache : 10-40 sec
-s3 : 30-42
-dynamo check: trim any where you see fit 
-mfa admin 
-secret manager
-mfa user group
-mfa email
+
+AWSURL="ec2-3-25-70-215.ap-southeast-2.compute.amazonaws.com"
+
+curl -X POST http://$AWSURL:5000/transcodetest \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"videoId\": \"$VIDEO_ID\",
+    \"s3Key\": \"$S3_KEY\" }"
+
+
+curl -X GET "http://$AWSURL:5000/get-video-url-test?videoId=e7795a51-2742-42ea-9d41-39739e13e5f4_720p.mp4"
+
+curl -X GET http://$AWSURL:5000/thumbnails/e7795a51-2742-42ea-9d41-39739e13e5f4
+
+
+curl -X POST http://n11772891.cab432.com:5000/confirm-registration \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ln60711",
+    "confirmationCode": "467087"
+  }'
+
+
+  TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ln84179","password":"Password123!"}' | jq -r '.accessToken')
+
+
+
+curl -s -X DELETE "http://$AWSURL:5000/video/e7795a51-2742-42ea-9d41-39739e13e5f4" \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+register ln60711 Password123! ln1607090@gmail.com
+
+
+login ln84179 Password123!
+login n1177 Password123!
+login ln60711 Password123!
+
+
+
 
 
 for mfa admin i just removed all videos, then reuploaded, just talk briefly about this, logged in as another user, then try to delete the video, then logged in as admin, then delete the video, dont show them the thumbnail folder
@@ -276,3 +306,27 @@ Exactly ✅ you’ve got the right picture now. Let me reframe it step by step w
 ---
 
 Would you like me to also write a **final polished summary (1–2 paragraphs)** that you can directly use as your assignment answer for both load distribution & auto scaling?
+
+
+Lambda A can also call ECS RunTask immediately after sending to SQS.
+
+Check ECS Service / Tasks via SDK
+
+
+Use the AWS SDK in Lambda to check your ECS cluster:
+import { ECSClient, ListTasksCommand } from "@aws-sdk/client-ecs";
+
+const ecsClient = new ECSClient({ region: process.env.AWS_REGION });
+
+async function isWorkerRunning() {
+  const data = await ecsClient.send(new ListTasksCommand({
+    cluster: "my-cluster",
+    serviceName: "worker-service",
+    desiredStatus: "RUNNING"
+  }));
+  return data.taskArns && data.taskArns.length > 0;
+}
+then call 
+if (!(await isWorkerRunning())) {
+  await ecsClient.send(new RunTaskCommand({ /* ... */ }));
+}

@@ -76,7 +76,8 @@ docker run -d --name webclient -p 8080:8080 webclient:latest
 
 
 
-cd /home/ln607/Documents/Cloudproject
+cd /home/ln607/DocumentsAWSURL="ec2-3-25-70-215.ap-southeast-2.compute.amazonaws.com"
+/Cloudproject
 
 zip -r Cloudproject.zip \
     webclient \
