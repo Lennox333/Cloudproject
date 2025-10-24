@@ -1,27 +1,42 @@
-import { SQSClient, ReceiveMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk/client-sqs";
 
 const sqsClient = new SQSClient({ region: "ap-southeast-2" });
+const QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-processing-queue";
 
-async function receiveMessages() {
-  const params = {
-    QueueUrl: "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-processing-queue",
-    MaxNumberOfMessages: 10,
-    VisibilityTimeout: 20,
-    WaitTimeSeconds: 10, // ✅ wait up to 10s for messages
-  };
+const receiveMessages = async () => {
+  try {
+    const params = {
+      QueueUrl: QUEUE_URL,
+      MaxNumberOfMessages: 10,
+      WaitTimeSeconds: 10, // enable long polling
+      MessageAttributeNames: ["All"],
+    };
 
-  const command = new ReceiveMessageCommand(params);
-  const response = await sqsClient.send(command);
+    const command = new ReceiveMessageCommand(params);
+    const response = await sqsClient.send(command);
 
-  console.log("Raw Response:", response);
-  if (!response.Messages) {
-    console.log("⚠️ No messages available in the queue right now.");
-    return;
+    if (!response.Messages || response.Messages.length === 0) {
+      console.log("No messages available in queue.");
+      return;
+    }
+
+    for (const msg of response.Messages) {
+      console.log("📩 Message received:");
+      console.log("MessageId:", msg.MessageId);
+      console.log("Body:", msg.Body);
+
+      // Delete message after processing
+      await sqsClient.send(
+        new DeleteMessageCommand({
+          QueueUrl: QUEUE_URL,
+          ReceiptHandle: msg.ReceiptHandle,
+        })
+      );
+      console.log(`✅ Deleted message ${msg.MessageId}`);
+    }
+  } catch (err) {
+    console.error("Error receiving messages:", err);
   }
+};
 
-  for (const message of response.Messages) {
-    console.log("📩 Received Message:", message.Body);
-  }
-}
-
-receiveMessages().catch(console.error);
+receiveMessages();
