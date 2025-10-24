@@ -4,3 +4,5 @@ webclient/.parcel-cache
 webclient/dist
 server/bash_demo/cookies.txt
 server/bash_demo/selfnote.md
+
+node_modules
