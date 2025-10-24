@@ -14,13 +14,13 @@ SESSION=$(curl -s -X POST http://$AWSURL:5000/login \
   -d '{"username":"ln60711","password":"Password123!"}' | jq -r '.session')
 
 
-TOKEN=$(curl -s -X POST http://$AWSURL:5000/confirm-login \
+curl -s -X POST http://$AWSURL:5000/confirm-login \
   -H "Content-Type: application/json" \
   -d "{
-        \"username\": "ln60711",
-        \"code\": "803503",
+        \"username\": \"ln60711\",
+        \"code\": \"895097\",
         \"session\": \"$SESSION\"
-      }" | jq -r '.accessToken')
+      }"
 
 
 curl -s -X DELETE "http://$AWSURL:5000/video/e7795a51-2742-42ea-9d41-39739e13e5f4" \

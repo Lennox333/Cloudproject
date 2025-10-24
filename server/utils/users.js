@@ -4,6 +4,7 @@ import {
   InitiateAuthCommand,
   AdminListGroupsForUserCommand,
   ConfirmSignUpCommand,
+  RespondToAuthChallengeCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { getConfig } from "./envManager.js"; // Import the config object
 import { cognitoClient } from "./cognitoClient.js";
@@ -103,6 +104,7 @@ async function loginUser(username, password) {
 }
 
 async function confirmEmailMfa(username, code, session) {
+  
   const command = new RespondToAuthChallengeCommand({
     ClientId: COGNITO_CLIENT_ID,
     ChallengeName: "SMS_MFA", // for built-in MFA (email or SMS)
