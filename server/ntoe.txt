@@ -13,8 +13,13 @@ TOKEN=$(curl -s -X POST http://$AWSURL:5000/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ln60711","password":"Password123!"}' | jq -r '.accessToken')
 
-echo $SESSION
+UPLOAD_URL=$(curl -X POST http://$AWSURL:5000/get-upload-url \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq -r '.uploadUrl')
 
+curl -X PUT "$UPLOAD_URL" \
+  -T "/home/ln607/Videos/recording_2025-07-24_20-09-43.mp4" \
+  -H "Content-Type: video/mp4"
 
 curl -s -X POST http://$AWSURL:5000/confirm-login \
   -H 'Content-Type: application/json' \
