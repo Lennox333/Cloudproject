@@ -1,7 +1,12 @@
 update ecr image, then update revision version in task definition in general endpoint
-if everything good, split services
-update 
+if everything good, switch to https, then split services
 
+ssh into ec2
+create ecr repos first, run the codes below
+crrate task definition fargate
+create services
+craete target gr
+update alb
 
 docker build -t worker-service -f services/worker/Dockerfile ./server
 docker build -t auth-service -f services/worker/Dockerfile ./server
