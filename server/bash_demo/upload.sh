@@ -13,7 +13,7 @@ TITLE="$2"
 DESCRIPTION="${3:-}"
 
 # Get presigned upload URL
-response=$(curl -s -b cookies.txt -X POST "http://$AWSURL:$PORT/get-upload-url")
+response=$(curl -s -b cookies.txt -X POST "http://$AWSURL:$PORT/get-url")
 UPLOAD_URL=$(echo "$response" | jq -r '.uploadUrl')
 VIDEO_ID=$(echo "$response" | jq -r '.videoId')
 S3_KEY=$(echo "$response" | jq -r '.s3Key')

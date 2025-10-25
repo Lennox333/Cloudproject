@@ -22,7 +22,7 @@ import {
 import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
@@ -367,6 +367,12 @@ app.get("/create-user-videos-table", async (req, res) => {
     res.status(500).json({ error: "Failed to ensure table" });
   }
 });
+
+// ALB sever health check
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 
 //##### ENDPOINTS ####
 

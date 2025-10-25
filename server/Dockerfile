@@ -12,14 +12,12 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# # Install AWS SDK
-# RUN npm install aws-sdk
 
 # Copy everything else
 COPY . .
 
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Use nodemon for live reload
 CMD ["npm", "run", "dev"]
