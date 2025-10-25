@@ -8,7 +8,7 @@ const receiveMessages = async () => {
     const params = {
       QueueUrl: QUEUE_URL,
       MaxNumberOfMessages: 10,
-      WaitTimeSeconds: 10, // enable long polling
+      WaitTimeSeconds: 20, // enable long polling
       MessageAttributeNames: ["All"],
     };
 

@@ -8,10 +8,11 @@ import { PassThrough } from "stream";
 import { getPresignedUrl, uploadToS3Multipart } from "./utils/s3.js";
 import { updateVideoStatus } from "./utils/videos.js";
 
+
 const sqsClient = new SQSClient({ region: process.env.AWS_REGION });
 const QUEUE_URL = process.env.SQS_QUEUE_URL;
 const POLLING_INTERVAL = 5000; // 5 seconds
-const MAX_CONCURRENT_JOBS = 2; // Limit concurrent transcoding jobs
+const MAX_CONCURRENT_JOBS = 1; // Limit concurrent transcoding jobs
 
 let activeJobs = 0;
 let isShuttingDown = false;
