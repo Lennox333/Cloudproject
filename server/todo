@@ -1,0 +1,10 @@
+
+docker build -t n11772891/resapi-server_worker_service -f ./server/Dockerfile_worker  ./server
+
+docker tag n11772891/resapi-server_worker_service:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
+
+
+add https,  test https, 
+update ecr, update task defintion of genral serv, stop all instances, 
+update target group to use https, upate alb gr24 to use 1 general service, test alb dns connection
