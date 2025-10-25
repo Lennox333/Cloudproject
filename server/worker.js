@@ -2,21 +2,33 @@ import {
   SQSClient,
   ReceiveMessageCommand,
   DeleteMessageCommand,
+  ChangeMessageVisibilityCommand,
 } from "@aws-sdk/client-sqs";
 import { spawn } from "child_process";
 import { PassThrough } from "stream";
 import { getPresignedUrl, uploadToS3Multipart } from "./utils/s3.js";
 import { updateVideoStatus } from "./utils/videos.js";
 
-
 const sqsClient = new SQSClient({ region: process.env.AWS_REGION });
 const QUEUE_URL = process.env.SQS_QUEUE_URL;
 const POLLING_INTERVAL = 5000; // 5 seconds
 const MAX_CONCURRENT_JOBS = 1; // Limit concurrent transcoding jobs
+const EXTEND_TIME = 300;
+const EXTEND_INTERVAL = 240 * 1000;
 
 let activeJobs = 0;
 let isShuttingDown = false;
 const videoJobTracker = new Map(); // Track jobs per video
+
+async function extendVisibility(receiptHandle, extraSeconds) {
+  await sqsClient.send(
+    new ChangeMessageVisibilityCommand({
+      QueueUrl: QUEUE_URL,
+      ReceiptHandle: receiptHandle,
+      VisibilityTimeout: extraSeconds,
+    })
+  );
+}
 
 /**
  * Transcode video to specific resolution
@@ -142,7 +154,7 @@ function trackJobCompletion(videoId, jobType) {
   }
 
   const tracker = videoJobTracker.get(videoId);
-  
+
   if (jobType === "thumbnail") {
     tracker.thumbnail = true;
   } else {
@@ -151,13 +163,13 @@ function trackJobCompletion(videoId, jobType) {
 
   // Check if all jobs are complete
   const allComplete = Object.values(tracker).every((status) => status === true);
-  
+
   if (allComplete) {
     console.log(`[Worker] All jobs complete for video ${videoId}`);
     videoJobTracker.delete(videoId);
     return true;
   }
-  
+
   return false;
 }
 
@@ -166,8 +178,15 @@ function trackJobCompletion(videoId, jobType) {
  */
 async function processJob(job, receiptHandle) {
   activeJobs++;
-  console.log(`[Worker] Processing job: ${job.jobType} for ${job.videoId} (${job.resolution || 'N/A'})`);
-
+  console.log(
+    `[Worker] Processing job: ${job.jobType} for ${job.videoId} (${
+      job.resolution || "N/A"
+    })`
+  );
+  // Extend timeout every 4 minutes (240s) until done
+  const interval = setInterval(() => {
+    extendVisibility(receiptHandle, EXTEND_TIME);
+  }, EXTEND_INTERVAL);
   try {
     // Get presigned URL for input video
     const s3Url = await getPresignedUrl(job.s3Key, 3600, "getObject");
@@ -184,7 +203,7 @@ async function processJob(job, receiptHandle) {
 
     // Track completion
     const allJobsComplete = trackJobCompletion(
-      job.videoId, 
+      job.videoId,
       job.jobType === "thumbnail" ? "thumbnail" : job.resolution
     );
 
@@ -210,6 +229,7 @@ async function processJob(job, receiptHandle) {
     await updateVideoStatus(job.videoId, "failed");
     return { success: false, error: error.message };
   } finally {
+    clearInterval(interval);
     activeJobs--;
   }
 }
@@ -235,14 +255,12 @@ async function pollQueue() {
   try {
     const receiveParams = {
       QueueUrl: QUEUE_URL,
-      MaxNumberOfMessages: Math.min(10, MAX_CONCURRENT_JOBS - activeJobs),
+      MaxNumberOfMessages: MAX_CONCURRENT_JOBS,
       WaitTimeSeconds: 20, // Long polling
       MessageAttributeNames: ["All"],
     };
 
-    const data = await sqsClient.send(
-      new ReceiveMessageCommand(receiveParams)
-    );
+    const data = await sqsClient.send(new ReceiveMessageCommand(receiveParams));
 
     if (data.Messages && data.Messages.length > 0) {
       console.log(`[Worker] Received ${data.Messages.length} message(s)`);

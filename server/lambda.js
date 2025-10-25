@@ -1,50 +1,50 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { ECSClient, ListTasksCommand } from "@aws-sdk/client-ecs";
+// import { ECSClient, ListTasksCommand } from "@aws-sdk/client-ecs";
 
 const REGION = "ap-southeast-2";
 // Initialize SQS client
-const CLUSTER_NAME = process.env.ECS_CLUSTER_NAME || "gr24-a3"; // set in Lambda env vars
-const ecsClient = new ECSClient({ region: REGION });
+// const CLUSTER_NAME = process.env.ECS_CLUSTER_NAME || "gr24-a3"; // set in Lambda env vars
+// const ecsClient = new ECSClient({ region: REGION });
 const sqsClient = new SQSClient({
   region: process.env.AWS_REGION || REGION,
 });
 
 const QUEUE_URL =
-  "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-processing-queue";
+  "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue";
 
-async function fargateTaskExists() {
-  try {
-    const command = new ListTasksCommand({
-      cluster: CLUSTER_NAME,
-      desiredStatus: "RUNNING",
-    });
-    const response = await ecsClient.send(command);
-    console.log(`Running Fargate tasks: ${response.taskArns.length}`);
-    return response.taskArns.length > 0;
-  } catch (err) {
-    console.error("Error checking Fargate tasks:", err);
-    // Fail-safe: assume running to prevent over-trigger
-    return true;
-  }
-}
+// async function fargateTaskExists() {
+//   try {
+//     const command = new ListTasksCommand({
+//       cluster: CLUSTER_NAME,
+//       desiredStatus: "RUNNING",
+//     });
+//     const response = await ecsClient.send(command);
+//     console.log(`Running Fargate tasks: ${response.taskArns.length}`);
+//     return response.taskArns.length > 0;
+//   } catch (err) {
+//     console.error("Error checking Fargate tasks:", err);
+//     // Fail-safe: assume running to prevent over-trigger
+//     return true;
+//   }
+// }
 
 export const handler = async (event) => {
   console.log("S3 Event:", JSON.stringify(event, null, 2));
 
   try {
-    const fargateRunning = await fargateTaskExists();
+    // const fargateRunning = await fargateTaskExists();
 
-    if (fargateRunning) {
-      console.log(
-        "[Lambda] Fargate task is already running — skipping job enqueue."
-      );
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: "Skipped: Fargate task already running.",
-        }),
-      };
-    }
+    // if (fargateRunning) {
+    //   console.log(
+    //     "[Lambda] Fargate task is already running — skipping job enqueue."
+    //   );
+    //   return {
+    //     statusCode: 200,
+    //     body: JSON.stringify({
+    //       message: "Skipped: Fargate task already running.",
+    //     }),
+    //   };
+    // }
 
     // Process each S3 record (there can be multiple)
     const results = [];
