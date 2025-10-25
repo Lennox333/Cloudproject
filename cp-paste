@@ -30,10 +30,17 @@ aws ecr get-login-password --region ap-southeast-2 \
 
 
 docker build -t n11772891/resapi-server ./server
+docker build -t n11772891/resapi-server_worker_service -f ./server/Dockerfile_worker  ./server
+
 docker build -t n11772891/resapi-client ./webclient
 
 docker tag n11772891/resapi-client:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:latest
 docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-client:latest
+
+docker tag n11772891/resapi-server_worker_service:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
+docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
+
+
 docker tag n11772891/resapi-server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
 docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
 

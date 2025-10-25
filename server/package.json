@@ -7,7 +7,7 @@
     "@aws-sdk/client-dynamodb": "^3.891.0",
     "@aws-sdk/client-s3": "^3.892.0",
     "@aws-sdk/client-secrets-manager": "^3.895.0",
-    "@aws-sdk/client-sqs": "^3.916.0",
+    "@aws-sdk/client-sqs": "^3.917.0",
     "@aws-sdk/client-ssm": "^3.895.0",
     "@aws-sdk/credential-provider-cognito-identity": "^3.892.0",
     "@aws-sdk/lib-dynamodb": "^3.894.0",
