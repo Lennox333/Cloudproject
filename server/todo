@@ -4,10 +4,8 @@ docker build -t n11772891/resapi-server_worker_service -f ./server/Dockerfile_wo
 docker tag n11772891/resapi-server_worker_service:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
 docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server_worker_service:latest
 
-
+git pull
 docker build -t n11772891/resapi-server ./server
-
-
 docker tag n11772891/resapi-server:latest 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
 docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
 
