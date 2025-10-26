@@ -17,8 +17,9 @@ RUN npm install --production
 COPY . .
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
+ENV PORT=3001
 ENV PURPOSE_PARAM=/n11772891/purpose
 ENV QUT_USERNAME_PARAM=/n11772891/qut_username
 ENV S3_BUCKET_PARAM=/n11772891/s3_bucket

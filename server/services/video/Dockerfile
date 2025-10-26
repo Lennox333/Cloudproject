@@ -17,7 +17,10 @@ RUN npm install --production
 COPY . .
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3002
+
+ENV PORT=3002
+
 # Set environment variables
 
 ENV PURPOSE_PARAM=/n11772891/purpose
