@@ -29,4 +29,4 @@ ENV MEMECACHE_PARAM=/n11772891/memecache
 ENV COGNITO_SECRET_NAME=n11772891-cognito-secrets
 ENV AWS_REGION=ap-southeast-2
 
-CMD ["node", "/services/root/root_service.js"]
+CMD ["node", "services/root/root_service.js"]
