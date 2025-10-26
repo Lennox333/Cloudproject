@@ -17,9 +17,9 @@ RUN npm install --production
 COPY . .
 
 # Expose port
-EXPOSE 3002
+EXPOSE 3000
 
-ENV PORT=3002
+ENV PORT=3000
 
 # Set environment variables
 
