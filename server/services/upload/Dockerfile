@@ -30,4 +30,4 @@ ENV MEMECACHE_PARAM=/n11772891/memecache
 ENV COGNITO_SECRET_NAME=n11772891-cognito-secrets
 ENV AWS_REGION=ap-southeast-2
 
-CMD ["node", "upload_service.js"]
+CMD ["node", "services/upload/upload_service.js"]
