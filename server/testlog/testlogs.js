@@ -1,7 +1,12 @@
-import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk/client-sqs";
+import {
+  SQSClient,
+  ReceiveMessageCommand,
+  DeleteMessageCommand,
+} from "@aws-sdk/client-sqs";
 
 const sqsClient = new SQSClient({ region: "ap-southeast-2" });
-const QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue";
+const QUEUE_URL =
+  "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue";
 
 const receiveMessages = async () => {
   try {
@@ -15,7 +20,7 @@ const receiveMessages = async () => {
     const command = new ReceiveMessageCommand(params);
     const response = await sqsClient.send(command);
 
-    console.log(response)
+    console.log(response);
     if (!response.Messages || response.Messages.length === 0) {
       console.log("No messages available in queue.");
       return;
@@ -25,6 +30,7 @@ const receiveMessages = async () => {
       console.log("📩 Message received:");
       console.log("MessageId:", msg.MessageId);
       console.log("Body:", msg.Body);
+      console.log("ReceiptHandle:", msg.ReceiptHandle);
 
       // Delete message after processing
       // await sqsClient.send(
