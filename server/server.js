@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { randomUUID } from "crypto";
 import { authenticateToken } from "./middleware/authentication.js";
-import { transcodeAndUpload } from "./utils/ffmpeg.js";
 import { createIfNotExist, getPresignedUrl } from "./utils/s3.js";
 import {
   isAdmin,
@@ -22,7 +21,7 @@ import {
 import { ensureUserVideosTable } from "./utils/dynamoSetup.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
