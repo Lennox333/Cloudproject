@@ -22,7 +22,7 @@ docker-compose up -d
 
 docker-compose -f docker-compose-from-ecr.yml up -d
 
-
+aws configure sso  --use-device-code
 aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 
 aws ecr get-login-password --region ap-southeast-2 \

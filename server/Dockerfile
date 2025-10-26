@@ -19,7 +19,7 @@ RUN npm install
 COPY . .
 
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Use nodemon for live reload
 CMD ["npm", "run", "dev"]
