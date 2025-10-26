@@ -6,14 +6,14 @@ N=50     # number of uploads
 CONC=5   # concurrent workers
 
 
-TOKEN=$(curl -s -X POST "$AWSURL"/login \
+TOKEN=$(curl -s -X POST "$AWSURL"/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ln60711","password":"Password123!"}' | jq -r '.accessToken')
 
 
 seq 1 $N | xargs -n1 -P $CONC -I{} bash -c '
   i={};
-  UPLOAD_URL=$(curl -s -X POST "'"$AWSURL"'/get-upload-url" \
+  UPLOAD_URL=$(curl -s -X POST "'"$AWSURL"'/upload/get-url" \
     -H "Authorization: Bearer '"$TOKEN"'" \
     -H "Content-Type: application/json" | jq -r ".uploadUrl")
   if [[ -z "$UPLOAD_URL" || "$UPLOAD_URL" == "null" ]]; then

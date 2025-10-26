@@ -1,7 +1,7 @@
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk/client-sqs";
 
 const sqsClient = new SQSClient({ region: "ap-southeast-2" });
-const QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-processing-queue";
+const QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue";
 
 const receiveMessages = async () => {
   try {
