@@ -33,7 +33,7 @@ const PARAMETERS = {
 
 const SECRETS_MANAGER_NAME = "n11772891-cognito-secrets";
 // AWS SDK Clients
-console.log("Fetching secret:", SECRETS_MANAGER_NAME);
+// console.log("Fetching secret:", SECRETS_MANAGER_NAME);
 
 const ssmClient = new SSMClient({ region: AWS_REGION });
 const secretsManagerClient = new SecretsManagerClient({ region: AWS_REGION });
