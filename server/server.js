@@ -368,6 +368,11 @@ app.get("/create-user-videos-table", async (req, res) => {
   }
 });
 
+// ALB sever health check
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 //##### ENDPOINTS ####
 
 app.listen(PORT, "0.0.0.0", () => {
