@@ -30,4 +30,4 @@ ENV DYNAMO_TABLE_PARAM=/n11772891/dynamo_table
 ENV AWS_REGION=ap-southeast-2
 ENV SQS_QUEUE_URL=https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue
 # Start worker
-CMD ["node", "worker.js"]
+CMD ["node", "/services/worker/worker.js"]
