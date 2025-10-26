@@ -10,7 +10,7 @@ import {
   logoutUser,
   registerUser,
   confirmRegistration,
-  confirmEmailMfa
+  confirmEmailMfa,
 } from "./utils/users.js";
 import {
   deleteVideo,
@@ -75,7 +75,7 @@ app.post("/confirm-registration", async (req, res) => {
 app.post("/confirm-login", async (req, res) => {
   const { username, code, session } = req.body;
 
-  console.log(session)
+  console.log(session);
   if (!username || !code || !session) {
     return res
       .status(400)
@@ -84,8 +84,8 @@ app.post("/confirm-login", async (req, res) => {
 
   try {
     const response = await confirmEmailMfa(username, code, session);
-    console.log(response)
-    
+    console.log(response);
+
     res.cookie("token", response.AuthenticationResult.AccessToken, {
       httpOnly: true,
       secure: false,
@@ -104,7 +104,6 @@ app.post("/confirm-login", async (req, res) => {
   }
 });
 
-
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -116,6 +115,7 @@ app.post("/login", async (req, res) => {
     // loginUser now returns tokens directly
     const result = await loginUser(username, password);
 
+    console.log("[AUTH] Logged in: ", username);
     res.cookie("token", result.accessToken, {
       httpOnly: true,
       secure: false, // set true if using HTTPS
@@ -154,7 +154,6 @@ app.post("/login", async (req, res) => {
 //     res.status(400).json({ error: "Invalid username or password" });
 //   }
 // });
-
 
 app.post("/logout", async (req, res) => {
   try {
@@ -226,15 +225,13 @@ app.post("/start-encode", authenticateToken, async (req, res) => {
 
   // No longer calling transcodeAndUpload here!
   // The Lambda function will detect the S3 upload and trigger processing automatically
-  
+
   res.status(200).json({
     message: "Upload confirmed. Video processing will begin automatically.",
     videoId,
-    status: "processing"
+    status: "processing",
   });
 });
-
-
 
 app.get("/thumbnails/:videoId", async (req, res) => {
   const { videoId } = req.params;
@@ -390,8 +387,6 @@ app.listen(PORT, "0.0.0.0", () => {
 //   }
 // });
 
-
-
 // app.get("/get-video-url-test", async (req, res) => {
 //   const { videoId, resolution = "720p" } = req.query; // get from query string
 //   if (!videoId) return res.status(400).json({ error: "videoId is required" });
@@ -406,7 +401,6 @@ app.listen(PORT, "0.0.0.0", () => {
 //     res.status(500).json({ error: "Failed to generate pre-signed URL" });
 //   }
 // });
-
 
 // app.post("/transcodetest", async (req, res) => {
 //   const { videoId, s3Key, title, description } = req.body;
