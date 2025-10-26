@@ -30,4 +30,4 @@ ENV COGNITO_SECRET_NAME=n11772891-cognito-secrets
 ENV AWS_REGION=ap-southeast-2
 
 
-CMD ["node", "video_service.js"]
+CMD ["node", "/services/video/video_service.js"]
