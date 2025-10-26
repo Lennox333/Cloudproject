@@ -5,7 +5,7 @@ services:
     build: .
     container_name: server-app-1  
     ports:
-      - "5000:5000"
+      - "3000:3000"
     volumes:
       - .:/usr/src/app         # Mount your project folder
       - /usr/src/app/node_modules # Keep container node_modules separate

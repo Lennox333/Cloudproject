@@ -26,7 +26,7 @@ resource "aws_instance" "backend_ec2" {
 
               # Pull and run backend container
               docker pull 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-server:latest
-              docker run -d --restart unless-stopped -p 5000:5000 \
+              docker run -d --restart unless-stopped -p 3000:3000 \
                 -e PURPOSE_PARAM=/n11772891/purpose \
                 -e QUT_USERNAME_PARAM=/n11772891/qut_username \
                 -e S3_BUCKET_PARAM=/n11772891/s3_bucket \
