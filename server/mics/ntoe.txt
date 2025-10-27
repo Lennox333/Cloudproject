@@ -41,3 +41,5 @@ login n1177 Password123!
 login ln60711 Password123!
 
 
+upload /home/ln607/Videos/recording_2025-07-24_20-09-43.mp4 a3-test
+

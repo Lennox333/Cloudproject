@@ -73,19 +73,22 @@ async function transcodeVideo(s3Url, outputKey, scale) {
       reject(err);
     });
 
-    ffmpeg.on("close", (code) => {
+    ffmpeg.on("close", async (code) => {
       if (code !== 0) {
         reject(new Error(`FFmpeg exited with code ${code}`));
+        return;
       }
-    });
 
-    console.log(`[Transcode] Uploading to S3: ${outputKey}`);
-    uploadToS3Multipart(pass, outputKey, "video/mp4")
-      .then(() => {
+      // Only upload if FFmpeg exited successfully
+      try {
+        console.log(`[Transcode] Uploading to S3: ${outputKey}`);
+        await uploadToS3Multipart(pass, outputKey, "video/mp4");
         console.log(`[Transcode] Upload successful: ${outputKey}`);
         resolve(outputKey);
-      })
-      .catch(reject);
+      } catch (err) {
+        reject(err);
+      }
+    });
   });
 }
 
@@ -124,19 +127,22 @@ async function generateThumbnail(s3Url, outputKey) {
       reject(err);
     });
 
-    ffmpeg.on("close", (code) => {
+    ffmpeg.on("close", async (code) => {
       if (code !== 0) {
         reject(new Error(`FFmpeg exited with code ${code}`));
+        return;
       }
-    });
 
-    console.log(`[Thumbnail] Uploading to S3: ${outputKey}`);
-    uploadToS3Multipart(pass, outputKey, "image/jpeg")
-      .then(() => {
+      // Only upload if FFmpeg exited successfully
+      try {
+        console.log(`[Thumbnail] Uploading to S3: ${outputKey}`);
+        await uploadToS3Multipart(pass, outputKey, "image/jpeg");
         console.log(`[Thumbnail] Upload successful: ${outputKey}`);
         resolve(outputKey);
-      })
-      .catch(reject);
+      } catch (err) {
+        reject(err);
+      }
+    });
   });
 }
 

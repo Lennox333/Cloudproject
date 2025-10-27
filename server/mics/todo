@@ -25,3 +25,17 @@ aws ecs list-services \
     --cluster gr24-a3 \
     --query "serviceArns[]" \
     --output text
+
+
+aws sqs send-message \
+  --queue-url "https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue" \
+  --message-body '{
+    "jobType": "transcode",
+    "videoId": "16e44813-539a-484f-8db8-03e2be7edb0f",
+    "s3Key": "videos/invalid-key.mp4",
+    "bucket": "n11772891-a2",
+    "resolution": "480p",
+    "scale": "854:480",
+    "outputKey": "videos/16e44813-539a-484f-8db8-03e2be7edb0f_480p.mp4",
+    "timestamp": "2025-10-27T09:53:20.794Z"
+  }'
