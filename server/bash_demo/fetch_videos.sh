@@ -19,4 +19,4 @@ QUERY="?"
 QUERY="${QUERY%&}"
 
 # Send request and pretty print JSON
-curl -s "http://$AWSURL:$PORT/videos$QUERY" | jq
+curl -s "$AWSURL/videos$QUERY" | jq -r '.videos[] | "\(.videoId) \(.title)"'

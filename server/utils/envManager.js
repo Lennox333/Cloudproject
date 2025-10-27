@@ -5,8 +5,8 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 
 // AWS region
-const AWS_REGION = "ap-southeast-2";
-// const AWS_REGION = process.env.AWS_REGION ;
+// const AWS_REGION = "ap-southeast-2";
+const AWS_REGION = process.env.AWS_REGION ;
 
 // Parameter names (const outside the function)
 // const PARAMETERS = {
@@ -24,7 +24,7 @@ const PARAMETERS = {
   QUT_USERNAME: process.env.QUT_USERNAME_PARAM,
   S3_BUCKET: process.env.S3_BUCKET_PARAM,
   USER_POOL_ID: process.env.USER_POOL_ID_PARAM,
-  DYNAMO_TABLE: process.env.DYNAMO_TABLE,
+  DYNAMO_TABLE: process.env.DYNAMO_TABLE_PARAM,
   MEMECACHE_ADDR: process.env.MEMECACHE_PARAM
 };
 

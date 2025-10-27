@@ -9,7 +9,7 @@ password="$2"
 
 # Login and save access token
 ACCESS_TOKEN=$(curl -s -c cookies.txt \
-  -X POST "http://$AWSURL:$PORT/login" \
+  -X POST "$AWSURL/auth/login" \
   -H "Content-Type: application/json" \
   -d "$(printf '{"username":"%s","password":"%s"}' "$username" "$password")" | jq -r '.accessToken')
 

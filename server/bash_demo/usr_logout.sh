@@ -1,1 +1,1 @@
-curl -b cookies.txt -X POST http://$AWSURL:$PORT/logout -v
+curl -b cookies.txt -X POST $AWSURL/auth/logout -v

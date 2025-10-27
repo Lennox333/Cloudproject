@@ -14,6 +14,6 @@ email="$3"
 echo "Registering user: $username (email: $email) -> $AWSURL:$PORT/register"
 
 # Send request and print raw output
-curl -s -X POST "http://$AWSURL:$PORT/register" \
+curl -s -X POST "$AWSURL/auth/register" \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"$username\",\"password\":\"$password\",\"email\":\"$email\"}"

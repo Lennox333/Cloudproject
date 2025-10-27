@@ -3,11 +3,11 @@ set -euo pipefail
 
 # Prompt for AWS URL and port once
 # read -rp "Enter AWS URL: " AWSURL
-AWSURL="n11772891.cab432.com"
+AWSURL="https://n11772891.cab432.com"
 # AWSURL="ec2-16-176-8-26.ap-southeast-2.compute.amazonaws.com"
-PORT="5000"
+# PORT="5000"
 
-echo "AWSURL set to $AWSURL:$PORT"
+echo "AWSURL set to $AWSURL"
 
 while true; do
 	read -rp "CLI> " cmd args

@@ -8,7 +8,7 @@ LIMIT="${3:-10}"
 LAST_KEY="${4:-}"
 
 # Get userId from /profile
-USER_JSON=$(curl -s -b cookies.txt "http://$AWSURL:$PORT/profile")
+USER_JSON=$(curl -s -b cookies.txt "$AWSURL/auth/profile")
 USER_ID=$(echo "$USER_JSON" | jq -r '.userId')
 
 if [ -z "$USER_ID" ] || [ "$USER_ID" = "null" ]; then
@@ -27,4 +27,4 @@ QUERY="?"
 QUERY="${QUERY%&}"
 
 # Fetch user videos
-curl -s "http://$AWSURL:$PORT/videos/$USER_ID$QUERY" | jq
+curl -s "$AWSURL/videos/$USER_ID$QUERY" | jq
