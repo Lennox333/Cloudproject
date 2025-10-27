@@ -35,12 +35,15 @@ Resources:
               awslogs-create-group: "true"
               awslogs-region: ap-southeast-2
               awslogs-stream-prefix: ecs
+
   EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: gr24-a3-cluster
+      Tags:
+        - Key: qut-username
+          Value: n11772891@qut.edu.au
 
-    # Application Load Balancer
   AppLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -53,9 +56,10 @@ Resources:
       SecurityGroups:
         - sg-032bd1ff8cf77dbb9
       Type: application
+      Tags:
+        - Key: qut-username
+          Value: n11772891@qut.edu.au
 
-
-  # ALB Target Group
   AppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -66,9 +70,9 @@ Resources:
       TargetType: ip
       HealthCheckProtocol: HTTP
       HealthCheckPath: /
-
-
-  # ALB Listener
+      Tags:
+        - Key: qut-username
+          Value: n11772891@qut.edu.au
 
   AppListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -81,7 +85,7 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref AppTargetGroup
-          
+
   GeneralEcsService:
     Type: AWS::ECS::Service
     Properties:
@@ -98,10 +102,20 @@ Resources:
             - subnet-04ca053dcbe5f49cc
           SecurityGroups:
             - sg-032bd1ff8cf77dbb9
-  LoadBalancers:
-    - TargetGroupArn: !Ref AppTargetGroup
-      ContainerName: gr24-a3-general-ednpoint-container
-      ContainerPort: 3000
+      LoadBalancers:
+        - TargetGroupArn: !Ref AppTargetGroup
+          ContainerName: gr24-a3-general-ednpoint-container
+          ContainerPort: 3000
+
+  SubdomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: cab432.com.
+      Name: n11772891-v2.cab432.com.
+      Type: CNAME
+      TTL: 300
+      ResourceRecords:
+        - !GetAtt AppLoadBalancer.DNSName
 
 Outputs:
   ServiceName:
