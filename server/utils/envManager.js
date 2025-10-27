@@ -6,7 +6,7 @@ import {
 
 // AWS region
 // const AWS_REGION = "ap-southeast-2";
-const AWS_REGION = process.env.AWS_REGION ;
+const AWS_REGION = process.env.AWS_REGION;
 
 // Parameter names (const outside the function)
 // const PARAMETERS = {
@@ -25,8 +25,14 @@ const PARAMETERS = {
   S3_BUCKET: process.env.S3_BUCKET_PARAM,
   USER_POOL_ID: process.env.USER_POOL_ID_PARAM,
   DYNAMO_TABLE: process.env.DYNAMO_TABLE_PARAM,
-  MEMECACHE_ADDR: process.env.MEMECACHE_PARAM
+  MEMECACHE_ADDR: process.env.MEMECACHE_PARAM,
 };
+
+for (const [key, path] of Object.entries(PARAMETERS)) {
+  if (!path) throw new Error(`Environment variable for ${key} is missing`);
+  const value = await fetchParameter(path);
+  config[key] = value;
+}
 
 // Secrets Manager name from env
 const SECRETS_MANAGER_NAME = process.env.COGNITO_SECRET_NAME;
