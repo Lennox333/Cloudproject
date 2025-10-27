@@ -12,3 +12,10 @@ docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/resapi-s
 add https,  test https, 
 update ecr, update task defintion of genral serv, stop all instances, 
 update target group to use https, upate alb gr24 to use 1 general service, test alb dns connection
+
+
+
+aws cloudformation deploy \
+    --stack-name gr24-a3-ecs-stack \
+    --template-file cloudformation.yaml \
+    --capabilities CAPABILITY_NAMED_IAM
