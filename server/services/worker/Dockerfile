@@ -20,12 +20,12 @@ COPY . .
 
 
 # Set environment variables
-# ENV PURPOSE_PARAM=/n11772891/purpose
-# ENV QUT_USERNAME_PARAM=/n11772891/qut_username
+ENV PURPOSE_PARAM=/n11772891/purpose
+ENV QUT_USERNAME_PARAM=/n11772891/qut_username
 ENV S3_BUCKET_PARAM=/n11772891/s3_bucket
 # ENV USER_POOL_ID_PARAM=/n11772891/user_pool_id
 ENV DYNAMO_TABLE_PARAM=/n11772891/dynamo_table
-# ENV MEMECACHE_PARAM=/n11772891/memecache
+ENV MEMECACHE_PARAM=/n11772891/memecache
 # ENV COGNITO_SECRET_NAME=n11772891-cognito-secrets
 ENV AWS_REGION=ap-southeast-2
 ENV SQS_QUEUE_URL=https://sqs.ap-southeast-2.amazonaws.com/901444280953/n11772891-video-queue
