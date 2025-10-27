@@ -33,7 +33,7 @@ const SECRETS_MANAGER_NAME = process.env.COGNITO_SECRET_NAME;
 
 // const SECRETS_MANAGER_NAME = "n11772891-cognito-secrets";
 // AWS SDK Clients
-// console.log("Fetching secret:", SECRETS_MANAGER_NAME);
+console.log("Fetching secret:", SECRETS_MANAGER_NAME);
 
 const ssmClient = new SSMClient({ region: AWS_REGION });
 const secretsManagerClient = new SecretsManagerClient({ region: AWS_REGION });
@@ -60,6 +60,7 @@ export async function getConfig() {
     // Fetch parameters individually
     for (const [key, path] of Object.entries(PARAMETERS)) {
       if (!path) throw new Error(`Environment variable for ${key} is missing`);
+      console.log(path)
       const value = await fetchParameter(path);
       config[key] = value;
     }
