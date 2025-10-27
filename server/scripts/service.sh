@@ -1,5 +1,6 @@
 
 git pull
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com
 
 
 docker build -t worker-service -f services/worker/Dockerfile .
@@ -23,3 +24,4 @@ docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/service-
 
 docker tag upload-service 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/service-upload:latest
 docker push 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/service-upload:latest
+

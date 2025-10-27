@@ -19,3 +19,9 @@ aws cloudformation deploy \
     --stack-name gr24-a3-ecs-stack \
     --template-file cloudformation.yaml \
     --capabilities CAPABILITY_NAMED_IAM
+
+
+aws ecs list-services \
+    --cluster gr24-a3 \
+    --query "serviceArns[]" \
+    --output text
