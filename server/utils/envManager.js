@@ -59,7 +59,7 @@ export async function getConfig() {
 
     // Fetch parameters individually
     for (const [key, path] of Object.entries(PARAMETERS)) {
-      if (!path) throw new Error(`Environment variable for ${key} is missing`);
+      // if (!path) throw new Error(`Environment variable for ${key} is missing`);
       console.log(path)
       const value = await fetchParameter(path);
       config[key] = value;
