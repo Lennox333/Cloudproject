@@ -28,12 +28,6 @@ const PARAMETERS = {
   MEMECACHE_ADDR: process.env.MEMECACHE_PARAM,
 };
 
-for (const [key, path] of Object.entries(PARAMETERS)) {
-  if (!path) throw new Error(`Environment variable for ${key} is missing`);
-  const value = await fetchParameter(path);
-  config[key] = value;
-}
-
 // Secrets Manager name from env
 const SECRETS_MANAGER_NAME = process.env.COGNITO_SECRET_NAME;
 
@@ -65,6 +59,7 @@ export async function getConfig() {
 
     // Fetch parameters individually
     for (const [key, path] of Object.entries(PARAMETERS)) {
+      if (!path) throw new Error(`Environment variable for ${key} is missing`);
       const value = await fetchParameter(path);
       config[key] = value;
     }
