@@ -1,0 +1,110 @@
+Parameters:
+  AlbArn:
+    Type: String
+    Description: Application Load Balancer ARN
+  TargetGroupArn:
+    Type: String
+    Description: Target Group ARN for ECS service
+
+Resources:
+  GeneralTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: gr24-a3-general-ednpoint
+      Cpu: "512"
+      Memory: "1024"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: arn:aws:iam::901444280953:role/Execution-Role-CAB432-ECS
+      TaskRoleArn: arn:aws:iam::901444280953:role/Task-Role-CAB432-ECS
+      ContainerDefinitions:
+        - Name: gr24-a3-general-ednpoint-container
+          Image: 901444280953.dkr.ecr.ap-southeast-2.amazonaws.com/n11772891/service-general:latest
+          Cpu: 512
+          Memory: 1024
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              HostPort: 3000
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/gr24-a3-general-ednpoint
+              awslogs-create-group: "true"
+              awslogs-region: ap-southeast-2
+              awslogs-stream-prefix: ecs
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: gr24-a3-cluster
+
+    # Application Load Balancer
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: gr24-a3-alb
+      Scheme: internet-facing
+      Subnets:
+        - subnet-075811427d5564cf9
+        - subnet-05a3b8177138c8b14
+        - subnet-04ca053dcbe5f49cc
+      SecurityGroups:
+        - sg-032bd1ff8cf77dbb9
+      Type: application
+
+
+  # ALB Target Group
+  AppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: gr24-a3-tg-general
+      Port: 3000
+      Protocol: HTTP
+      VpcId: vpc-007bab53289655834
+      TargetType: ip
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+
+
+  # ALB Listener
+
+  AppListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: arn:aws:acm:ap-southeast-2:901444280953:certificate/a61029e5-17e4-4b43-a462-ec4e51058717
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppTargetGroup
+          
+  GeneralEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      TaskDefinition: !Ref GeneralTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - subnet-075811427d5564cf9
+            - subnet-05a3b8177138c8b14
+            - subnet-04ca053dcbe5f49cc
+          SecurityGroups:
+            - sg-032bd1ff8cf77dbb9
+  LoadBalancers:
+    - TargetGroupArn: !Ref AppTargetGroup
+      ContainerName: gr24-a3-general-ednpoint-container
+      ContainerPort: 3000
+
+Outputs:
+  ServiceName:
+    Value: !Ref GeneralEcsService
+  LoadBalancerDNS:
+    Value: !GetAtt AppLoadBalancer.DNSName

@@ -13,9 +13,14 @@ TOKEN=$(curl -s -X POST "$AWSURL"/auth/login \
 
 seq 1 $N | xargs -n1 -P $CONC -I{} bash -c '
   i={};
-  UPLOAD_URL=$(curl -s -X POST "'"$AWSURL"'/upload/get-url" \
-    -H "Authorization: Bearer '"$TOKEN"'" \
-    -H "Content-Type: application/json" | jq -r ".uploadUrl")
+	UPLOAD_URL=$(curl -s -X POST "$AWSURL/upload/get-url" \
+	-H "Authorization: Bearer $TOKEN" \
+	-H "Content-Type: application/json" \
+	-d '{
+		"title": "My Video Title",
+		"description": "Optional description here"
+	}' | jq -r ".uploadUrl")
+
   if [[ -z "$UPLOAD_URL" || "$UPLOAD_URL" == "null" ]]; then
     echo "[$i] no upload url" >&2
     exit 1
