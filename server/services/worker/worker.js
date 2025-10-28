@@ -29,9 +29,7 @@ async function extendVisibility(receiptHandle, extraSeconds) {
         VisibilityTimeout: extraSeconds,
       })
     );
-    console.log(
-      "[Worker] Extend visibility"
-    );
+    console.log("[Worker] Extend visibility");
   } catch (err) {
     if (err.Code === "InvalidParameterValue") {
       console.warn(
@@ -82,21 +80,19 @@ async function transcodeVideo(s3Url, outputKey, scale) {
       console.error(`[FFmpeg] Spawn error: ${err}`);
       reject(err);
     });
-
-    ffmpeg.on("close", async (code) => {
+    ffmpeg.on("close", (code) => {
       if (code !== 0) {
         reject(new Error(`FFmpeg exited with code ${code}`));
-        return;
-      }
-      try {
-        console.log(`[Transcode] Uploading to S3: ${outputKey}`);
-        await uploadToS3Multipart(pass, outputKey, "video/mp4");
-        console.log(`[Transcode] Upload successful: ${outputKey}`);
-        resolve(outputKey);
-      } catch (err) {
-        reject(err);
       }
     });
+
+    console.log(`[Transcode] Uploading to S3: ${outputKey}`);
+    uploadToS3Multipart(pass, outputKey, "video/mp4")
+      .then(() => {
+        console.log(`[Transcode] Upload successful: ${outputKey}`);
+        resolve(outputKey);
+      })
+      .catch(reject);
   });
 }
 
@@ -142,7 +138,6 @@ async function generateThumbnail(s3Url, outputKey) {
         resolve(outputKey);
       })
       .catch(reject);
-
   });
 }
 
@@ -154,7 +149,7 @@ async function processJob(job, receiptHandle) {
   );
 
   try {
-    console.log(job)
+    console.log(job);
     const s3Url = await getPresignedUrl(job.s3Key, 3600, "getObject");
 
     if (job.jobType === "transcode")
@@ -204,7 +199,6 @@ async function pollQueue() {
         MessageAttributeNames: ["All"],
       })
     );
-
 
     if (data.Messages?.length) {
       await Promise.allSettled(
