@@ -29,6 +29,9 @@ async function extendVisibility(receiptHandle, extraSeconds) {
         VisibilityTimeout: extraSeconds,
       })
     );
+    console.log(
+      "[Worker] Extend visibility"
+    );
   } catch (err) {
     if (err.Code === "InvalidParameterValue") {
       console.warn(
