@@ -43,3 +43,14 @@ login ln60711 Password123!
 
 upload /home/ln607/Videos/recording_2025-07-24_20-09-43.mp4 a3-test
 
+
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+docker rmi -f $(docker images -q)
+docker volume rm $(docker volume ls -q)
+
+git pull
+
+docker build -t worker-service -f services/worker/Dockerfile .
+docker run -d --name worker-service    worker-service                                          
+docker logs worker-service

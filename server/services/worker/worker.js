@@ -115,8 +115,8 @@ async function generateThumbnail(s3Url, outputKey) {
         "1",
         "-f",
         "image2",
-        "-update",
-        "1",
+        // "-update",
+        // "1",
         "pipe:1",
       ],
       { stdio: ["pipe", "pipe", "pipe"] }
