@@ -115,8 +115,8 @@ async function generateThumbnail(s3Url, outputKey) {
         "1",
         "-f",
         "image2",
-        // "-update",
-        // "1",
+        "-update",
+        "1",
         "pipe:1",
       ],
       { stdio: ["pipe", "pipe", "pipe"] }
@@ -154,6 +154,7 @@ async function processJob(job, receiptHandle) {
   );
 
   try {
+    console.log(job)
     const s3Url = await getPresignedUrl(job.s3Key, 3600, "getObject");
 
     if (job.jobType === "transcode")
@@ -203,6 +204,7 @@ async function pollQueue() {
         MessageAttributeNames: ["All"],
       })
     );
+
 
     if (data.Messages?.length) {
       await Promise.allSettled(
