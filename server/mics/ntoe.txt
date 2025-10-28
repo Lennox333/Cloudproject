@@ -53,4 +53,4 @@ git pull
 
 docker build -t worker-service -f services/worker/Dockerfile .
 docker run -d --name worker-service    worker-service                                          
-docker logs worker-service
+docker logs worker-service -f

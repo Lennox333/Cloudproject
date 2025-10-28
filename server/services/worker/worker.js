@@ -134,15 +134,15 @@ async function generateThumbnail(s3Url, outputKey) {
         reject(new Error(`FFmpeg exited with code ${code}`));
         return;
       }
-      try {
-        console.log(`[Thumbnail] Uploading to S3: ${outputKey}`);
-        await uploadToS3Multipart(pass, outputKey, "image/jpeg");
+    });
+    console.log(`[Thumbnail] Uploading thumbnail to S3: ${outputKey}`);
+    uploadToS3Multipart(pass, outputKey, "image/jpeg")
+      .then(async () => {
         console.log(`[Thumbnail] Upload successful: ${outputKey}`);
         resolve(outputKey);
-      } catch (err) {
-        reject(err);
-      }
-    });
+      })
+      .catch(reject);
+
   });
 }
 
