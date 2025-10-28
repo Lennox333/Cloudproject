@@ -21,15 +21,24 @@ let activeJobs = 0;
 let isShuttingDown = false;
 
 async function extendVisibility(receiptHandle, extraSeconds) {
-  await sqsClient.send(
-    new ChangeMessageVisibilityCommand({
-      QueueUrl: QUEUE_URL,
-      ReceiptHandle: receiptHandle,
-      VisibilityTimeout: extraSeconds,
-    })
-  );
+  try {
+    await sqsClient.send(
+      new ChangeMessageVisibilityCommand({
+        QueueUrl: QUEUE_URL,
+        ReceiptHandle: receiptHandle,
+        VisibilityTimeout: extraSeconds,
+      })
+    );
+  } catch (err) {
+    if (err.Code === "InvalidParameterValue") {
+      console.warn(
+        "[Worker] Cannot extend visibility, message may be deleted or expired."
+      );
+    } else {
+      throw err;
+    }
+  }
 }
-
 // Video transcoding
 async function transcodeVideo(s3Url, outputKey, scale) {
   return new Promise((resolve, reject) => {
@@ -158,7 +167,12 @@ async function processJob(job, receiptHandle) {
       await updateVideoStatus(job.videoId, "processed");
       console.log(`[Worker] Video ${job.videoId} marked as processed`);
     }
-
+  } catch (error) {
+    console.error(`[Worker] Job failed:`, error);
+    await updateVideoStatus(job.videoId, "failed");
+  } finally {
+    clearInterval(interval);
+    activeJobs--;
     await sqsClient.send(
       new DeleteMessageCommand({
         QueueUrl: QUEUE_URL,
@@ -166,12 +180,6 @@ async function processJob(job, receiptHandle) {
       })
     );
     console.log(`[Worker] Job completed and removed from queue`);
-  } catch (error) {
-    console.error(`[Worker] Job failed:`, error);
-    await updateVideoStatus(job.videoId, "failed");
-  } finally {
-    clearInterval(interval);
-    activeJobs--;
   }
 }
 
